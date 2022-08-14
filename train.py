@@ -26,13 +26,12 @@ class AnimeSegmentation(pl.LightningModule):
         if gt_encoder is not None:
             assert isinstance(net, ISNetDIS) and isinstance(gt_encoder, ISNetGTEncoder)
             self.gt_encoder = gt_encoder
+            for param in self.gt_encoder.parameters():
+                param.requires_grad = False
         else:
             self.gt_encoder = None
 
     def configure_optimizers(self):
-        if self.gt_encoder is not None:
-            for param in self.gt_encoder.parameters():
-                param.requires_grad = False
         optimizer = optim.Adam(self.net.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
         return optimizer
 

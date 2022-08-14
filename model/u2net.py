@@ -1,3 +1,6 @@
+# Codes are borrowed from
+# https://github.com/xuebinqin/U-2-Net/blob/master/model/u2net_refactor.py
+
 import torch
 import torch.nn as nn
 

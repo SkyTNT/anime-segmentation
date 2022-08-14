@@ -1,3 +1,8 @@
+# Codes are borrowed from
+# https://github.com/ZHKKKe/MODNet/blob/master/src/trainer.py
+# https://github.com/ZHKKKe/MODNet/blob/master/src/models/backbones/mobilenetv2.py
+# https://github.com/ZHKKKe/MODNet/blob/master/src/models/modnet.py
+
 import numpy as np
 import scipy
 import torch
@@ -67,6 +72,7 @@ class GaussianBlurLayer(nn.Module):
 
         for name, param in self.named_parameters():
             param.data.copy_(torch.from_numpy(kernel))
+            param.requires_grad = False
 
 
 def loss_func(blurer, pred_semantic, pred_detail, pred_matte, image, trimap, gt_matte,

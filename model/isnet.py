@@ -1,3 +1,6 @@
+# Codes are borrowed from
+# https://github.com/xuebinqin/DIS/blob/main/IS-Net/models/isnet.py
+
 import torch
 import torch.nn as nn
 from torchvision import models
