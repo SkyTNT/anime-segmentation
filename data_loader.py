@@ -6,6 +6,7 @@ import time
 import cv2
 import torch
 import numpy as np
+from scipy.ndimage import grey_dilation, grey_erosion
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from torchvision.transforms import functional
@@ -69,14 +70,31 @@ class RandomCrop(object):
         return {'image': image, 'label': label}
 
 
+class WithTrimap(object):
+
+    def __init__(self):
+        pass
+
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        trimap = label[0].clone().numpy()
+        h, w = trimap.shape
+        s = int((h + w) * 0.025)
+        trimap[np.where((grey_dilation(trimap, size=(s, s)) - grey_erosion(trimap, size=(s, s))) > 0.5)] = 0.5
+        trimap = trimap[np.newaxis, :, :]
+        trimap = torch.from_numpy(trimap)
+        return {'image': image, 'label': label, 'trimap': trimap}
+
+
 class SalObjDataset(Dataset):
     def __init__(self, real_img_list, real_mask_list, generator: DatasetGenerator = None,
-                 transform=None, transform_generator=None):
+                 transform=None, transform_generator=None, with_trimap=False):
         self.dataset_generator = generator
         self.real_img_list = real_img_list
         self.real_mask_list = real_mask_list
         self.transform = transform
         self.transform_generator = transform_generator
+        self.with_trimap = WithTrimap() if with_trimap else None
 
     def __len__(self):
         length = len(self.real_img_list)
@@ -98,11 +116,13 @@ class SalObjDataset(Dataset):
             sample = self.transform(sample)
         if self.transform_generator and idx >= len(self.real_img_list):
             sample = self.transform_generator(sample)
+        if self.with_trimap:
+            sample = self.with_trimap(sample)
         return sample
 
 
 def create_training_datasets(data_root, fgs_dir, bgs_dir, imgs_dir, masks_dir, fg_ext, bg_ext, img_ext, mask_ext,
-                             spilt_rate, image_size, ):
+                             spilt_rate, image_size, with_trimap=False):
     def add_sep(path):
         if not (path.endswith("/") or path.endswith("\\")):
             return path + os.sep
@@ -141,8 +161,10 @@ def create_training_datasets(data_root, fgs_dir, bgs_dir, imgs_dir, masks_dir, f
     print("---")
     transform = transforms.Compose([RescalePad(image_size + image_size // 4), RandomCrop(image_size)])
     train_generator = DatasetGenerator(train_bg_list, train_fg_list, (image_size, image_size), (image_size, image_size))
-    train_dataset = SalObjDataset(train_img_list, train_mask_list, train_generator, transform=transform)
+    train_dataset = SalObjDataset(train_img_list, train_mask_list, train_generator,
+                                  transform=transform, with_trimap=with_trimap)
     val_generator = DatasetGenerator(val_bg_list, val_fg_list, (image_size, image_size), (image_size, image_size))
-    val_dataset = SalObjDataset(val_img_list, val_mask_list, val_generator, transform=transform)
+    val_dataset = SalObjDataset(val_img_list, val_mask_list, val_generator,
+                                transform=transform, with_trimap=with_trimap)
 
     return train_dataset, val_dataset

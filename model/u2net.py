@@ -121,7 +121,8 @@ class U2NET(nn.Module):
         return maps
 
     @staticmethod
-    def compute_loss(preds, labels_v):
+    def compute_loss(args):
+        preds, labels_v = args
         d0, d1, d2, d3, d4, d5, d6 = preds
         loss0 = bce_loss(d0, labels_v)
         loss1 = bce_loss(d1, labels_v)

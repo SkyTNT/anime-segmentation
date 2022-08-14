@@ -425,7 +425,9 @@ class ISNetGTEncoder(nn.Module):
         self.side5 = nn.Conv2d(512, out_ch, 3, padding=1)
         self.side6 = nn.Conv2d(512, out_ch, 3, padding=1)
 
-    def compute_loss(self, preds, targets):
+    @staticmethod
+    def compute_loss(args):
+        preds, targets = args
         return muti_loss_fusion(preds, targets)
 
     def forward(self, x):
@@ -528,8 +530,13 @@ class ISNetDIS(nn.Module):
         return muti_loss_fusion_kl(preds, targets, dfs, fs, mode=mode)
 
     @staticmethod
-    def compute_loss(preds, targets):
-        return muti_loss_fusion(preds, targets)
+    def compute_loss(args):
+        if len(args) == 3:
+            ds, dfs, labels = args
+            return muti_loss_fusion(ds, labels)
+        else:
+            ds, dfs, labels, fs = args
+            return muti_loss_fusion_kl(ds, labels, dfs, fs, mode="MSE")
 
     def forward(self, x):
         hx = x

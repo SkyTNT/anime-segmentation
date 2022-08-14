@@ -52,13 +52,21 @@ def get_mask(input_img, use_amp=True, s=640):
         return pred
 
 
+def get_keys(d, name):
+    if 'state_dict' in d:
+        d = d['state_dict']
+    d_filt = {k[len(name) + 1:]: v for k, v in d.items() if k[:len(name)] == name}
+    return d_filt
+
+
 if __name__ == "__main__":
     net = ISNetDIS()
     device = torch.device('cuda:0')
-    net.load_state_dict(torch.load('saved_models/isnet_best.pt', device))
+    # net.load_state_dict(torch.load('saved_models/isnet_best.ckpt', device))
+    net.load_state_dict(get_keys(torch.load('saved_models/isnet_best.ckpt', device), "net"))
     net.to(device)
     net.eval()
-    gen_data = True
+    gen_data = False
     size = 1024
 
     if not os.path.exists("out"):
@@ -73,7 +81,7 @@ if __name__ == "__main__":
         tra_fg_list = glob.glob(data_dir + tra_fg_dir + '*' + fg_ext)
         tra_bg_list = glob.glob(data_dir + tra_bg_dir + '*' + bg_ext)
         generator = DatasetGenerator(tra_bg_list, tra_fg_list, output_size_range_h=(size, size),
-                                     output_size_range_w=(size, size), characters_range=(1,1))
+                                     output_size_range_w=(size, size), characters_range=(1, 1))
         salobj_dataset = SalObjDataset([], [], generator)
         for i, data in enumerate(tqdm(salobj_dataset)):
             img = (data['image'].permute(1, 2, 0).numpy() * 255).astype(np.uint8)
@@ -81,7 +89,7 @@ if __name__ == "__main__":
             img = np.concatenate((img, mask * img, mask * 255), axis=1).astype(np.uint8)
             io.imsave(f'out/{i:06d}.jpg', img)
     else:
-        for i, path in enumerate(tqdm(glob.glob("../../dataset/anime-seg/test2/*.*"))):
+        for i, path in enumerate(tqdm(glob.glob("../../dataset/anime-seg/imgs/*.*"))):
             img = io.imread(path)
             if img.shape[2] == 4:
                 img = img[:, :, 0:3]
