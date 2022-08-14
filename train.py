@@ -8,7 +8,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from torch.utils.data import Dataset, DataLoader
 import torch.optim as optim
 from data_loader import create_training_datasets
-from model import ISNetDIS, U2NET, U2NET_full2, U2NET_lite2
+from model import ISNetDIS, ISNetGTEncoder, U2NET, U2NET_full2, U2NET_lite2
 from metrics import f1_torch, mae_torch
 import pytorch_lightning as pl
 import warnings
@@ -19,10 +19,12 @@ import warnings
 
 class AnimeSegmentation(pl.LightningModule):
 
-    def __init__(self, net):
+    def __init__(self, net, gt_encoder=None):
         super().__init__()
-        assert any([isinstance(net, x) for x in [ISNetDIS, U2NET]]), "NotImplemented for the net"
+        assert any([isinstance(net, x) for x in [ISNetDIS, ISNetGTEncoder, U2NET]])
         self.net = net
+        if gt_encoder is not None:
+            self.gt_encoder = gt_encoder
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.net.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
@@ -30,6 +32,8 @@ class AnimeSegmentation(pl.LightningModule):
 
     def forward(self, x):
         if isinstance(self.net, ISNetDIS):
+            return self.net(x)[0][0].sigmoid()
+        if isinstance(self.net, ISNetGTEncoder):
             return self.net(x)[0][0].sigmoid()
         elif isinstance(self.net, U2NET):
             return self.net(x)[0].sigmoid()
@@ -39,6 +43,8 @@ class AnimeSegmentation(pl.LightningModule):
         images, labels = batch["image"], batch["label"]
         if isinstance(self.net, ISNetDIS):
             ds = self.net(images)[0]
+        elif isinstance(self.net, ISNetGTEncoder):
+            ds = self.net(labels)[0]
         elif isinstance(self.net, U2NET):
             ds = self.net(images)
         else:
@@ -51,7 +57,10 @@ class AnimeSegmentation(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         images, labels = batch["image"], batch["label"]
-        preds = self.forward(images)
+        if isinstance(self.net, ISNetGTEncoder):
+            preds = self.forward(labels)
+        else:
+            preds = self.forward(images)
         pre, rec, f1, = f1_torch(preds.nan_to_num(nan=0, posinf=1, neginf=0), labels)
         mae = mae_torch(preds, labels)
         pre_m = pre.mean().item()
@@ -64,6 +73,8 @@ class AnimeSegmentation(pl.LightningModule):
 def get_net(net_name):
     if net_name == "isnet":
         return ISNetDIS()
+    elif net_name == "isnet_gt":
+        return ISNetGTEncoder()
     elif net_name == "u2net":
         return U2NET_full2()
     elif net_name == "u2netl":
@@ -72,6 +83,9 @@ def get_net(net_name):
 
 
 def main(opt):
+    if not os.path.exists("lightning_logs"):
+        os.mkdir("lightning_logs")
+
     train_dataset, val_dataset = create_training_datasets(opt.data_dir, opt.fg_dir, opt.bg_dir, opt.img_dir,
                                                           opt.mask_dir, opt.fg_ext, opt.bg_ext, opt.img_ext,
                                                           opt.mask_ext, opt.data_split, opt.img_size)
@@ -102,9 +116,9 @@ def main(opt):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # model args
-    parser.add_argument('--net', type=str, default='isnet', choices=["isnet", "u2net", "u2netl"],
+    parser.add_argument('--net', type=str, default='isnet_gt', choices=["isnet", "isnet_gt", "u2net", "u2netl"],
                         help='net name')
-    parser.add_argument('--pretrained-ckpt', type=str, default='saved_models/isnet.pt',
+    parser.add_argument('--pretrained-ckpt', type=str, default='',
                         help='load form pretrained ckpt of net')
     parser.add_argument('--resume-ckpt', type=str, default='',
                         help='resume training from ckpt')

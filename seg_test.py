@@ -61,6 +61,9 @@ if __name__ == "__main__":
     gen_data = True
     size = 1024
 
+    if not os.path.exists("out"):
+        os.mkdir("out")
+
     if gen_data:
         data_dir = '../../dataset/anime-seg/'
         tra_fg_dir = 'fg/'
