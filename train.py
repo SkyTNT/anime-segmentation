@@ -16,16 +16,30 @@ import warnings
 
 # warnings.filterwarnings("ignore")
 
+def get_net(net_name):
+    if net_name == "isnet":
+        return ISNetDIS()
+    elif net_name == "isnet_is":
+        return ISNetDIS()
+    elif net_name == "isnet_gt":
+        return ISNetGTEncoder()
+    elif net_name == "u2net":
+        return U2NET_full2()
+    elif net_name == "u2netl":
+        return U2NET_lite2()
+    elif net_name == "modnet":
+        return MODNet()
+    raise NotImplemented
+
 
 class AnimeSegmentation(pl.LightningModule):
 
-    def __init__(self, net, gt_encoder=None):
+    def __init__(self, net_name):
         super().__init__()
-        assert any([isinstance(net, x) for x in [ISNetDIS, ISNetGTEncoder, U2NET, MODNet]])
-        self.net = net
-        if gt_encoder is not None:
-            assert isinstance(net, ISNetDIS) and isinstance(gt_encoder, ISNetGTEncoder)
-            self.gt_encoder = gt_encoder
+        assert net_name in ["isnet_is", "isnet", "isnet_gt", "u2net", "u2netl", "modnet"]
+        self.net = get_net(net_name)
+        if net_name == "isnet_is":
+            self.gt_encoder = get_net("isnet_gt")
             for param in self.gt_encoder.parameters():
                 param.requires_grad = False
         else:
@@ -94,25 +108,9 @@ class AnimeSegmentation(pl.LightningModule):
         self.log_dict({"val/precision": pre_m, "val/recall": rec_m, "val/f1": f1_m, "val/mae": mae_m})
 
 
-def get_net(net_name):
-    if net_name == "isnet":
-        return ISNetDIS()
-    elif net_name == "isnet_is":
-        return ISNetDIS()
-    elif net_name == "isnet_gt":
-        return ISNetGTEncoder()
-    elif net_name == "u2net":
-        return U2NET_full2()
-    elif net_name == "u2netl":
-        return U2NET_lite2()
-    elif net_name == "modnet":
-        return MODNet()
-    raise NotImplemented
-
-
 def get_gt_encoder(train_dataloader, val_dataloader, opt):
     print("---start train ground truth encoder---")
-    gt_encoder = AnimeSegmentation(get_net("isnet_gt"))
+    gt_encoder = AnimeSegmentation("isnet_gt")
     trainer = Trainer(precision=32 if opt.fp32 else 16, accelerator=opt.accelerator,
                       devices=opt.devices, max_epochs=opt.gt_epoch,
                       benchmark=opt.benchmark, accumulate_grad_batches=opt.acc_step,
@@ -137,18 +135,13 @@ def main(opt):
                                 num_workers=opt.workers_val, pin_memory=False)
     print("---define model---")
     if opt.resume_ckpt != "":
-        anime_seg = AnimeSegmentation.load_from_checkpoint(opt.resume_ckpt, net=get_net(opt.net),
-                                                           gt_encoder=get_net(
-                                                               "isnet_gt") if opt.net == "isnet_is" else None)
+        anime_seg = AnimeSegmentation.load_from_checkpoint(opt.resume_ckpt, net_name=opt.net)
     else:
-        net = get_net(opt.net)
+        anime_seg = AnimeSegmentation(opt.net)
         if opt.pretrained_ckpt != "":
-            net.load_state_dict(torch.load(opt.pretrained_ckpt))
+            anime_seg.net.load_state_dict(torch.load(opt.pretrained_ckpt))
         if opt.net == "isnet_is":
-            gt_encoder = get_gt_encoder(train_dataloader, val_dataloader, opt)
-        else:
-            gt_encoder = None
-        anime_seg = AnimeSegmentation(net, gt_encoder)
+            anime_seg.gt_encoder.load_state_dict(get_gt_encoder(train_dataloader, val_dataloader, opt).state_dict())
 
     print("---start train---")
     checkpoint_callback = ModelCheckpoint(monitor='val/f1', mode="max", save_top_k=1, save_last=True,
