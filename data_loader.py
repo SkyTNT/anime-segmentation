@@ -109,7 +109,7 @@ class SalObjDataset(Dataset):
             image = cv2.cvtColor(cv2.imread(self.real_img_list[idx], cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
             label = cv2.imread(self.real_mask_list[idx], cv2.IMREAD_GRAYSCALE)[:, :, np.newaxis]
             image, label = image.astype(np.float32) / 255, label.astype(np.float32) / 255
-            label = (label > 0.5).astype(np.float32)
+            label = (label > 0.3).astype(np.float32)
         else:
             image, label = self.dataset_generator[idx - len(self.real_img_list)]
         image, label = torch.from_numpy(image).permute(2, 0, 1), torch.from_numpy(label).permute(2, 0, 1)

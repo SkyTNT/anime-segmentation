@@ -21,6 +21,8 @@ class DatasetGenerator:
         self.load_all = load_all
         self.bgs = []
         self.fgs = []
+        random.shuffle(self.bg_list)
+        self.bg_idx = 0
         characters_idx = []
         characters_total = 0
         while True:
@@ -90,12 +92,15 @@ class DatasetGenerator:
         fgs = []
         if self.load_all:
             fgs = [self.fgs[x].astype(np.float32) / 255 for x in self.characters_idx[idx]]
-            bg = random.choice(self.bgs).astype(np.float32) / 255
+            bg = self.bgs[self.bg_idx].astype(np.float32) / 255
         else:
             fgs = [cv2.cvtColor(cv2.imread(self.fg_list[x], cv2.IMREAD_UNCHANGED), cv2.COLOR_BGRA2RGBA).astype(
                 np.float32) / 255 for x in self.characters_idx[idx]]
-            bg = cv2.cvtColor(cv2.imread(random.choice(self.bg_list), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB).astype(
+            bg = cv2.cvtColor(cv2.imread(self.bg_list[self.bg_idx], cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB).astype(
                 np.float32) / 255
+        self.bg_idx += 1
+        if self.bg_idx >= len(self.bg_list):
+            self.bg_idx = 0
 
         # resize to output_size
 

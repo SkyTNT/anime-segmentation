@@ -11,7 +11,7 @@ from tqdm import tqdm
 from train import AnimeSegmentation
 
 
-def get_mask(input_img, use_amp=True, s=640, itr=1):
+def get_mask(model, input_img, use_amp=True, s=640, itr=1):
     h0, w0 = h, w = input_img.shape[0], input_img.shape[1]
     if h > w:
         h, w = s, int(s * w / h)
@@ -33,7 +33,7 @@ def get_mask(input_img, use_amp=True, s=640, itr=1):
         pred = cv2.resize(cv2.cvtColor(pred.cpu().numpy().transpose((1, 2, 0)), cv2.COLOR_GRAY2RGB),
                           (w0, h0))
     if itr > 1:
-        return get_mask(input_img * pred, use_amp, s, itr - 1)
+        return get_mask(model, input_img * pred, use_amp, s, itr - 1)
     else:
         return pred
 
@@ -54,12 +54,15 @@ if __name__ == "__main__":
                         help='input image size')
     parser.add_argument('--device', type=str, default='cuda:0',
                         help='cpu or cuda:0')
+    parser.add_argument('--fp32', action='store_true', default=False,
+                        help='disable mix precision')
     opt = parser.parse_args()
     print(opt)
 
+    device = torch.device(opt.device)
+
     model = AnimeSegmentation.load_from_checkpoint(opt.ckpt, net_name=opt.net, strict=False)
     model.eval()
-    device = torch.device(opt.device)
     model.to(device)
 
     if not os.path.exists(opt.out):
@@ -69,7 +72,7 @@ if __name__ == "__main__":
         img = cv2.cvtColor(cv2.imread(path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
         if img.shape[2] == 4:
             img = img[:, :, 0:3]
-        mask = get_mask(img, s=opt.img_size)
+        mask = get_mask(model, img, use_amp=not opt.fp32, s=opt.img_size)
         img = np.concatenate((img, mask * img, mask * 255), axis=1).astype(np.uint8)
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         cv2.imwrite(f'out/{i:06d}.jpg', img)
