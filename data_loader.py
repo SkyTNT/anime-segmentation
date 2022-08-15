@@ -14,6 +14,7 @@ from dataset_generator import DatasetGenerator
 
 
 class RescalePad(object):
+    # Rescale the image to max edge equal output_size and pad to square
     def __init__(self, output_size):
         self.output_size = output_size
 
@@ -33,6 +34,7 @@ class RescalePad(object):
 
 
 class Rescale(object):
+    # Rescale the image to min edge equal output_size
     def __init__(self, output_size):
         self.output_size = output_size
 
@@ -71,7 +73,7 @@ class RandomCrop(object):
 
 
 class WithTrimap(object):
-
+    # Generate trimap from mask
     def __init__(self):
         pass
 

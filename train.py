@@ -9,7 +9,6 @@ from torch.utils.data import Dataset, DataLoader
 import torch.optim as optim
 from data_loader import create_training_datasets
 from model import ISNetDIS, ISNetGTEncoder, U2NET, U2NET_full2, U2NET_lite2, MODNet
-from metrics import f1_torch
 import pytorch_lightning as pl
 import warnings
 
@@ -30,6 +29,16 @@ def get_net(net_name):
     elif net_name == "modnet":
         return MODNet()
     raise NotImplemented
+
+
+def f1_torch(pred, gt):
+    pred = pred.float().view(pred.shape[0], -1)
+    gt = gt.float().view(gt.shape[0], -1)
+    tp = torch.sum(pred * gt, dim=1)
+    precision = tp / (pred.sum(dim=1) + 0.0001)
+    recall = tp / (gt.sum(dim=1) + 0.0001)
+    f1 = (1 + 0.3) * precision * recall / (0.3 * precision + recall + 0.0001)
+    return precision, recall, f1
 
 
 class AnimeSegmentation(pl.LightningModule):
@@ -81,16 +90,8 @@ class AnimeSegmentation(pl.LightningModule):
             fs = self.gt_encoder(labels)[1]
             loss_args.append(fs)
 
-        losses = self.net.compute_loss(loss_args)
-
-        if isinstance(self.net, MODNet):
-            semantic_loss, detail_loss, matte_loss = losses
-            loss = semantic_loss + detail_loss + matte_loss
-            self.log_dict({"train/semantic_loss": semantic_loss, "train/detail_loss": detail_loss,
-                           "train/matte_loss": matte_loss})
-        else:
-            loss0, loss = losses
-            self.log_dict({"train/loss": loss, "train/loss_tar": loss0})
+        loss0, loss = self.net.compute_loss(loss_args)
+        self.log_dict({"train/loss": loss, "train/loss_tar": loss0})
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -145,7 +146,7 @@ def main(opt):
     print("---start train---")
     checkpoint_callback = ModelCheckpoint(monitor='val/f1', mode="max", save_top_k=1, save_last=True,
                                           auto_insert_metric_name=False, filename="epoch={epoch},f1={val/f1:.4f}")
-    trainer = Trainer(precision=32 if (opt.fp32 or opt.net == "modnet") else 16, accelerator=opt.accelerator,
+    trainer = Trainer(precision=32 if opt.fp32 else 16, accelerator=opt.accelerator,
                       devices=opt.devices, max_epochs=opt.epoch,
                       benchmark=opt.benchmark, accumulate_grad_batches=opt.acc_step,
                       check_val_every_n_epoch=opt.val_epoch, log_every_n_steps=opt.log_step,
@@ -209,7 +210,7 @@ if __name__ == "__main__":
     parser.add_argument('--devices', type=int, default=1,
                         help='devices num')
     parser.add_argument('--fp32', action='store_true', default=False,
-                        help='disable mix precision (auto disable for modnet)')
+                        help='disable mix precision')
     parser.add_argument('--benchmark', action='store_true', default=False,
                         help='enable cudnn benchmark')
     parser.add_argument('--log-step', type=int, default=2,

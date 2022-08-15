@@ -20,7 +20,7 @@ if __name__ == '__main__':
     mask_ext = '.jpg'
 
     train_dataset, val_dataset = create_training_datasets(data_dir, tra_fg_dir, tra_bg_dir, tra_img_dir, tra_mask_dir,
-                                                          fg_ext, bg_ext, img_ext, mask_ext, 0.95, 640,True)
+                                                          fg_ext, bg_ext, img_ext, mask_ext, 0.95, 640, True)
 
     salobj_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=2)
     for data in salobj_dataloader:
@@ -29,4 +29,3 @@ if __name__ == '__main__':
                                         cv2.cvtColor(data['trimap'][0].permute(1, 2, 0).numpy(), cv2.COLOR_GRAY2RGB)],
                                        axis=1))
         cv2.waitKey(1000)
-

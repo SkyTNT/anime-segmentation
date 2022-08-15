@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import os
 import math
 import torch
+from scipy.ndimage import gaussian_filter
 
 
 # ----------------------------------------------------------------------------------
@@ -68,7 +69,7 @@ class GaussianBlurLayer(nn.Module):
         n = np.zeros((self.kernel_size, self.kernel_size))
         i = math.floor(self.kernel_size / 2)
         n[i, i] = 1
-        kernel = scipy.ndimage.gaussian_filter(n, sigma)
+        kernel = gaussian_filter(n, sigma)
 
         for name, param in self.named_parameters():
             param.data.copy_(torch.from_numpy(kernel))
@@ -104,8 +105,7 @@ def loss_func(pred_semantic, pred_detail, pred_matte, image, trimap, gt_matte,
         matte_loss (torch.Tensor): loss of the semantic-detail fusion [Fusion Branch]
     """
 
-    # forward the model
-
+    trimap = trimap.float()
     # calculate the boundary mask from the trimap
     boundaries = (trimap < 0.5) + (trimap > 0.5)
 
@@ -116,13 +116,13 @@ def loss_func(pred_semantic, pred_detail, pred_matte, image, trimap, gt_matte,
     semantic_loss = semantic_scale * semantic_loss
 
     # calculate the detail loss
-    pred_boundary_detail = torch.where(boundaries, trimap, pred_detail)
-    gt_detail = torch.where(boundaries, trimap, gt_matte)
-    detail_loss = torch.mean(F.l1_loss(pred_boundary_detail, gt_detail))
+    pred_boundary_detail = torch.where(boundaries, trimap, pred_detail.float())
+    gt_detail = torch.where(boundaries, trimap, gt_matte.float())
+    detail_loss = torch.mean(F.l1_loss(pred_boundary_detail, gt_detail.float()))
     detail_loss = detail_scale * detail_loss
 
     # calculate the matte loss
-    pred_boundary_matte = torch.where(boundaries, trimap, pred_matte)
+    pred_boundary_matte = torch.where(boundaries, trimap, pred_matte.float())
     matte_l1_loss = F.l1_loss(pred_matte, gt_matte) + 4.0 * F.l1_loss(pred_boundary_matte, gt_matte)
     matte_compositional_loss = F.l1_loss(image * pred_matte, image * gt_matte) \
                                + 4.0 * F.l1_loss(image * pred_boundary_matte, image * gt_matte)
@@ -633,11 +633,14 @@ class MODNet(nn.Module):
         pred_matte = self.f_branch(img, lr8x, hr2x)
 
         return pred_semantic, pred_detail, pred_matte
-    
+
     @staticmethod
     def compute_loss(args):
         pred_semantic, pred_detail, pred_matte, image, trimap, gt_matte = args
-        return loss_func(pred_semantic, pred_detail, pred_matte, image, trimap, gt_matte)
+        semantic_loss, detail_loss, matte_loss = loss_func(pred_semantic, pred_detail, pred_matte,
+                                                           image, trimap, gt_matte)
+        loss = semantic_loss + detail_loss + matte_loss
+        return matte_loss, loss
 
     def freeze_norm(self):
         norm_types = [nn.BatchNorm2d, nn.InstanceNorm2d]
@@ -657,7 +660,7 @@ class MODNet(nn.Module):
         if norm.weight is not None:
             nn.init.constant_(norm.weight, 1)
             nn.init.constant_(norm.bias, 0)
-            
+
     def _apply(self, fn):
         super(MODNet, self)._apply(fn)
         blurer._apply(fn)  # let blurer's device same as modnet
