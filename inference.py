@@ -21,7 +21,7 @@ def get_mask(model, input_img, use_amp=True, s=640, itr=1):
     tmpImg = np.zeros([s, s, 3], dtype=np.float32)
     tmpImg[ph // 2:ph // 2 + h, pw // 2:pw // 2 + w] = cv2.resize(input_img, (w, h)) / 255
     tmpImg = tmpImg.transpose((2, 0, 1))
-    tmpImg = torch.from_numpy(tmpImg).unsqueeze(0).type(torch.FloatTensor).to(device)
+    tmpImg = torch.from_numpy(tmpImg).unsqueeze(0).type(torch.FloatTensor).to(model.device)
     with torch.no_grad():
         if use_amp:
             with amp.autocast():

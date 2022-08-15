@@ -122,9 +122,9 @@ class DatasetGenerator:
         label = (label > 0.3).astype(np.float32)
 
         # random quality
+        if random.randint(0, 3) == 0:
+            image = cv2.blur(image, [3, 3])
         if random.randint(0, 3) > 0:
-            if random.randint(0, 3) == 0:
-                image = cv2.blur(image, [3, 3])
             image = Image.fromarray((image * 255).astype(np.uint8))
             image_stream = BytesIO()
             image.save(image_stream, "JPEG", quality=random.randrange(50, 100), optimice=True)
