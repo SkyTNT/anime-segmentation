@@ -75,7 +75,10 @@ class GaussianBlurLayer(nn.Module):
             param.requires_grad = False
 
 
-def loss_func(blurer, pred_semantic, pred_detail, pred_matte, image, trimap, gt_matte,
+blurer = GaussianBlurLayer(1, 3)
+
+
+def loss_func(pred_semantic, pred_detail, pred_matte, image, trimap, gt_matte,
               semantic_scale=10.0, detail_scale=10.0, matte_scale=1.0):
     """ loss of MODNet
     Arguments:
@@ -615,8 +618,6 @@ class MODNet(nn.Module):
         self.hr_branch = HRBranch(self.hr_channels, self.backbone.enc_channels)
         self.f_branch = FusionBranch(self.hr_channels, self.backbone.enc_channels)
 
-        self.blurer = GaussianBlurLayer(1, 3)
-
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 self._init_conv(m)
@@ -632,10 +633,11 @@ class MODNet(nn.Module):
         pred_matte = self.f_branch(img, lr8x, hr2x)
 
         return pred_semantic, pred_detail, pred_matte
-
-    def compute_loss(self, args):
+    
+    @staticmethod
+    def compute_loss(args):
         pred_semantic, pred_detail, pred_matte, image, trimap, gt_matte = args
-        return loss_func(self.blurer, pred_semantic, pred_detail, pred_matte, image, trimap, gt_matte)
+        return loss_func(pred_semantic, pred_detail, pred_matte, image, trimap, gt_matte)
 
     def freeze_norm(self):
         norm_types = [nn.BatchNorm2d, nn.InstanceNorm2d]
@@ -655,3 +657,8 @@ class MODNet(nn.Module):
         if norm.weight is not None:
             nn.init.constant_(norm.weight, 1)
             nn.init.constant_(norm.bias, 0)
+            
+    def _apply(self, fn):
+        super(MODNet, self)._apply(fn)
+        blurer._apply(fn)  # let blurer's device same as modnet
+        return self

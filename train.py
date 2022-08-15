@@ -2,14 +2,14 @@ import os
 
 import argparse
 import torch
+import torch.nn.functional as F
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
-
 from torch.utils.data import Dataset, DataLoader
 import torch.optim as optim
 from data_loader import create_training_datasets
 from model import ISNetDIS, ISNetGTEncoder, U2NET, U2NET_full2, U2NET_lite2, MODNet
-from metrics import f1_torch, mae_torch
+from metrics import f1_torch
 import pytorch_lightning as pl
 import warnings
 
@@ -100,11 +100,10 @@ class AnimeSegmentation(pl.LightningModule):
         else:
             preds = self.forward(images)
         pre, rec, f1, = f1_torch(preds.nan_to_num(nan=0, posinf=1, neginf=0), labels)
-        mae = mae_torch(preds, labels)
+        mae_m = F.l1_loss(preds, labels, reduction="mean")
         pre_m = pre.mean()
         rec_m = rec.mean()
         f1_m = f1.mean()
-        mae_m = mae.mean()
         self.log_dict({"val/precision": pre_m, "val/recall": rec_m, "val/f1": f1_m, "val/mae": mae_m})
 
 
