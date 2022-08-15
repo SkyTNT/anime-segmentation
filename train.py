@@ -159,11 +159,19 @@ if __name__ == "__main__":
     # model args
     parser.add_argument('--net', type=str, default='isnet_is',
                         choices=["isnet_is", "isnet", "u2net", "u2netl", "modnet"],
-                        help='net name')
+                        help='isnet_is: Train ISNet with intermediate feature supervision, '
+                             'isnet: Train ISNet, '
+                             'u2net: Train u2net full, '
+                             'u2netl: Train u2net lite, '
+                             'modnet: Train MODNet')
     parser.add_argument('--pretrained-ckpt', type=str, default='',
                         help='load form pretrained ckpt of net')
     parser.add_argument('--resume-ckpt', type=str, default='',
                         help='resume training from ckpt')
+    parser.add_argument('--img-size', type=int, default=1024,
+                        help='image size for training and validation,'
+                             '1024 recommend for ISNet,'
+                             '640 recommend for others,')
 
     # dataset args
     parser.add_argument('--data-dir', type=str, default='../../dataset/anime-seg',
@@ -186,8 +194,6 @@ if __name__ == "__main__":
                         help='extension name of masks')
     parser.add_argument('--data-split', type=float, default=0.95,
                         help='split rate for training and validation')
-    parser.add_argument('--img-size', type=int, default=1024,
-                        help='image size for training and validation')
 
     # training args
     parser.add_argument('--epoch', type=int, default=40,

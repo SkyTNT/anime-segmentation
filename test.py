@@ -53,6 +53,9 @@ if __name__ == "__main__":
                         help='resume training from ckpt')
     parser.add_argument('--out', type=str, default='out',
                         help='output dir')
+    parser.add_argument('--img-size', type=int, default=1024,
+                        help='input image size')
+
     # dataset args
     parser.add_argument('--data-dir', type=str, default='../../dataset/anime-seg',
                         help='root dir of dataset')
@@ -73,8 +76,6 @@ if __name__ == "__main__":
     parser.add_argument('--mask-ext', type=str, default='.jpg',
                         help='extension name of masks')
 
-    parser.add_argument('--img-size', type=int, default=1024,
-                        help='input image size')
     parser.add_argument('--device', type=str, default='cuda:0',
                         help='cpu or cuda:0')
     parser.add_argument('--fp32', action='store_true', default=False,
