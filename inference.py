@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     device = torch.device(opt.device)
 
-    model = AnimeSegmentation.try_load(opt.net, opt.ckpt)
+    model = AnimeSegmentation.try_load(opt.net, opt.ckpt, opt.device)
     model.eval()
     model.to(device)
 

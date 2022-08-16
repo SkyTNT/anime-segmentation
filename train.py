@@ -55,10 +55,10 @@ class AnimeSegmentation(pl.LightningModule):
             self.gt_encoder = None
 
     @classmethod
-    def try_load(cls, net_name, ckpt_path):
+    def try_load(cls, net_name, ckpt_path, map_location=None):
         state_dict = torch.load(ckpt_path)
         if "epoch" in state_dict:
-            return cls.load_from_checkpoint(ckpt_path, net_name=net_name)
+            return cls.load_from_checkpoint(ckpt_path, net_name=net_name,map_location=map_location)
         else:
             model = cls(net_name)
             model.net.load_state_dict(state_dict)

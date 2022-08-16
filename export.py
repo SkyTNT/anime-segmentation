@@ -1,11 +1,12 @@
 import argparse
-import onnx
 import torch
-from onnxsim import simplify
+
 from train import AnimeSegmentation
 
 
 def export_onnx(model, img_size, path):
+    import onnx
+    from onnxsim import simplify
     torch.onnx.export(model,  # model being run
                       torch.randn(1, 3, img_size, img_size),  # model input (or a tuple for multiple inputs)
                       path,  # where to save the model (can be a file or file-like object)
@@ -40,7 +41,7 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     print(opt)
 
-    model = AnimeSegmentation.try_load(opt.net, opt.ckpt)
+    model = AnimeSegmentation.try_load(opt.net, opt.ckpt, "cpu")
     model.eval()
     if opt.to == "only_net_state_dict":
         torch.save(model.net.state_dict(), opt.out)
