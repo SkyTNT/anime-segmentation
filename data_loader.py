@@ -1,6 +1,7 @@
 # data loader
 import glob
 import os
+import random
 import time
 
 import cv2
@@ -69,6 +70,21 @@ class RandomCrop(object):
         image = image[:, top: top + new_h, left: left + new_w]
         label = label[:, top: top + new_h, left: left + new_w]
 
+        return {'image': image, 'label': label}
+
+
+class GaussianNoise(object):
+
+    def __init__(self, mean=0, sigma=0.1):
+        self.mean = mean
+        self.sigma = sigma
+
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        if random.randint(0, 1) == 0:
+            noise = torch.normal(self.mean, self.sigma, image.shape)
+            image = image + noise
+            image = image.clip(0, 1)
         return {'image': image, 'label': label}
 
 
@@ -161,12 +177,15 @@ def create_training_datasets(data_root, fgs_dir, bgs_dir, imgs_dir, masks_dir, f
     print("val imgs: ", len(val_img_list))
     print("val masks: ", len(val_mask_list))
     print("---")
-    transform = transforms.Compose([RescalePad(image_size + image_size // 4), RandomCrop(image_size)])
+    transform = transforms.Compose([RescalePad(image_size + image_size // 4), RandomCrop(image_size), GaussianNoise()])
+    transform_generator = transforms.Compose([GaussianNoise()])
     train_generator = DatasetGenerator(train_bg_list, train_fg_list, (image_size, image_size), (image_size, image_size))
     train_dataset = SalObjDataset(train_img_list, train_mask_list, train_generator,
-                                  transform=transform, with_trimap=with_trimap)
+                                  transform=transform, transform_generator=transform_generator,
+                                  with_trimap=with_trimap)
     val_generator = DatasetGenerator(val_bg_list, val_fg_list, (image_size, image_size), (image_size, image_size))
     val_dataset = SalObjDataset(val_img_list, val_mask_list, val_generator,
-                                transform=transform, with_trimap=with_trimap)
+                                transform=transform, transform_generator=transform_generator,
+                                with_trimap=with_trimap)
 
     return train_dataset, val_dataset

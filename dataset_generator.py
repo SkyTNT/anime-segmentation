@@ -158,7 +158,7 @@ class DatasetGenerator:
         else:
             bg = self.random_corp(bg, output_size)
 
-        if random.randint(0, 2) == 0:
+        if random.randint(0, 1) == 0:
             # generate sharp background
             d = 50
             counts = []
