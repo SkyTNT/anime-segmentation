@@ -115,7 +115,7 @@ class AnimeSegmentation(pl.LightningModule):
         pre_m = pre.mean()
         rec_m = rec.mean()
         f1_m = f1.mean()
-        self.log_dict({"val/precision": pre_m, "val/recall": rec_m, "val/f1": f1_m, "val/mae": mae_m})
+        self.log_dict({"val/precision": pre_m, "val/recall": rec_m, "val/f1": f1_m, "val/mae": mae_m}, sync_dist=True)
 
 
 def get_gt_encoder(train_dataloader, val_dataloader, opt):
@@ -139,9 +139,9 @@ def main(opt):
                                                           opt.mask_ext, opt.data_split, opt.img_size,
                                                           with_trimap=opt.net == "modnet")
 
-    train_dataloader = DataLoader(train_dataset, batch_size=opt.batch_size_train, shuffle=True,
+    train_dataloader = DataLoader(train_dataset, batch_size=opt.batch_size_train, shuffle=True, persistent_workers=True,
                                   num_workers=opt.workers_train, pin_memory=False)
-    val_dataloader = DataLoader(val_dataset, batch_size=opt.batch_size_val, shuffle=False,
+    val_dataloader = DataLoader(val_dataset, batch_size=opt.batch_size_val, shuffle=False, persistent_workers=True,
                                 num_workers=opt.workers_val, pin_memory=False)
     print("---define model---")
     if opt.resume_ckpt != "":
@@ -160,6 +160,7 @@ def main(opt):
                       devices=opt.devices, max_epochs=opt.epoch,
                       benchmark=opt.benchmark, accumulate_grad_batches=opt.acc_step,
                       check_val_every_n_epoch=opt.val_epoch, log_every_n_steps=opt.log_step,
+                      strategy="ddp_find_unused_parameters_false",
                       callbacks=[checkpoint_callback])
     trainer.fit(anime_seg, train_dataloader, val_dataloader)
 
