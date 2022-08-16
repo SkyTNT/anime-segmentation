@@ -33,14 +33,16 @@ if __name__ == "__main__":
                         help='model checkpoint path')
     parser.add_argument('--out', type=str, default='saved_models/isnet_best.onnx',
                         help='output path')
-    parser.add_argument('--to', type=str, default='onnx', choices=["onnx"],
-                        help='export to (format)')
+    parser.add_argument('--to', type=str, default='onnx', choices=["only_net_state_dict", "onnx"],
+                        help='export to ()')
     parser.add_argument('--img-size', type=int, default=1024,
                         help='input image size')
     opt = parser.parse_args()
     print(opt)
 
-    model = AnimeSegmentation.load_from_checkpoint(opt.ckpt, net_name=opt.net, strict=False)
+    model = AnimeSegmentation.try_load(opt.net, opt.ckpt)
     model.eval()
-    if opt.to == "onnx":
+    if opt.to == "only_net_state_dict":
+        torch.save(model.net.state_dict(), opt.out)
+    elif opt.to == "onnx":
         export_onnx(model, opt.img_size, opt.out)

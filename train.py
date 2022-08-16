@@ -54,6 +54,16 @@ class AnimeSegmentation(pl.LightningModule):
         else:
             self.gt_encoder = None
 
+    @classmethod
+    def try_load(cls, net_name, ckpt_path):
+        state_dict = torch.load(ckpt_path)
+        if "epoch" in state_dict:
+            return cls.load_from_checkpoint(ckpt_path, net_name=net_name)
+        else:
+            model = cls(net_name)
+            model.net.load_state_dict(state_dict)
+            return model
+
     def configure_optimizers(self):
         optimizer = optim.Adam(self.net.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
         return optimizer
