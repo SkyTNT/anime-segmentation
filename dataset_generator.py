@@ -158,7 +158,7 @@ class DatasetGenerator:
         else:
             bg = self.random_corp(bg, output_size)
 
-        if random.randint(0, 1) == 0:
+        if random.randint(0, 2) == 0:
             # generate sharp background
             d = 50
             counts = []
@@ -188,7 +188,7 @@ class DatasetGenerator:
             label = np.fmax(label_i, label)
         label = (label > 0.3).astype(np.float32)
 
-        if random.randint(0, 1) == 0:
+        if random.randint(0, 2) == 0:
             image = self.simulate_light(image)
 
         # random quality

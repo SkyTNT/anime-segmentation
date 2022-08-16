@@ -160,7 +160,7 @@ def main(opt):
                       devices=opt.devices, max_epochs=opt.epoch,
                       benchmark=opt.benchmark, accumulate_grad_batches=opt.acc_step,
                       check_val_every_n_epoch=opt.val_epoch, log_every_n_steps=opt.log_step,
-                      strategy="ddp_find_unused_parameters_false",
+                      strategy="ddp_find_unused_parameters_false" if opt.devices > 1 else None,
                       callbacks=[checkpoint_callback])
     trainer.fit(anime_seg, train_dataloader, val_dataloader)
 
