@@ -161,8 +161,8 @@ if __name__ == "__main__":
                         choices=["isnet_is", "isnet", "u2net", "u2netl", "modnet"],
                         help='isnet_is: Train ISNet with intermediate feature supervision, '
                              'isnet: Train ISNet, '
-                             'u2net: Train u2net full, '
-                             'u2netl: Train u2net lite, '
+                             'u2net: Train U2Net full, '
+                             'u2netl: Train U2Net lite, '
                              'modnet: Train MODNet')
     parser.add_argument('--pretrained-ckpt', type=str, default='',
                         help='load form pretrained ckpt of net')

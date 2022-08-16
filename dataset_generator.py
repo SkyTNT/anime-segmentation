@@ -1,3 +1,4 @@
+import math
 import time
 
 import cv2
@@ -7,6 +8,17 @@ from io import BytesIO
 from PIL import Image
 from tqdm import tqdm
 from scipy.ndimage import measurements
+
+
+def vector_included_angle(v1, v2):
+    a1 = math.atan2(v1[1], v1[0])
+    a2 = math.atan2(v2[1], v2[0])
+    a = a1 - a2
+    if a > math.pi:
+        a = a - math.pi * 2
+    if a < -math.pi:
+        a = a + math.pi * 2
+    return a
 
 
 class DatasetGenerator:
@@ -81,13 +93,51 @@ class DatasetGenerator:
                             borderMode=cv2.BORDER_CONSTANT)
         return fg
 
+    @staticmethod
+    def simulate_light(image, strength=0.2):
+        img_size = image.shape[:2]
+        a = int(np.linalg.norm(img_size) / 2)
+        r = random.randint(a * 11 // 10, a * 2)
+        b = random.uniform(0, math.pi * 2)
+        cx = int(img_size[1] // 2 + r * math.cos(b))
+        cy = int(img_size[0] // 2 + r * math.sin(b))
+        c_v = [img_size[1] // 2 - cx, img_size[0] // 2 - cy]
+        rs = [vector_included_angle([-cx, -cy], c_v),
+              vector_included_angle([img_size[1] - cx, -cy], c_v),
+              vector_included_angle([-cx, img_size[0] - cy], c_v),
+              vector_included_angle([img_size[1] - cx, img_size[0] - cy], c_v)]
+        ds = [np.linalg.norm([-cx, -cy]),
+              np.linalg.norm([img_size[1] - cx, -cy]),
+              np.linalg.norm([-cx, img_size[0] - cy]),
+              np.linalg.norm([img_size[1] - cx, img_size[0] - cy])]
+        r2 = max(ds)
+        cr = math.atan2(c_v[1], c_v[0])
+        if cr < 0:
+            cr = math.pi * 2 + cr
+        sr = min(rs) + cr
+        er = max(rs) + cr
+        n = int(50 * (er - sr) * 2 / math.pi)
+        color = (random.uniform(1 - strength, 1),
+                 random.uniform(1 - strength, 1),
+                 random.uniform(1 - strength, 1))
+        if random.randint(0, 1) == 0:
+            light_mask = np.full([*img_size, 3], (1 + strength, 1 + strength, 1 + strength), dtype=np.float32)
+        else:
+            light_mask = np.full([*img_size, 3], color, dtype=np.float32)
+            color = (1 + strength, 1 + strength, 1 + strength)
+        for a in np.linspace(sr, er, num=n):
+            x2 = int(cx + r2 * math.cos(a))
+            y2 = int(cy + r2 * math.sin(a))
+            light_mask = cv2.line(light_mask, [cx, cy], [x2, y2], color, 10)
+        return (image * light_mask).clip(0, 1)
+
     def __len__(self):
         return len(self.characters_idx)
 
     def __getitem__(self, idx):
         output_size = [random.randint(self.output_size_range_h[0], self.output_size_range_h[1]),
                        random.randint(self.output_size_range_w[0], self.output_size_range_w[1])]
-        fgs = []
+
         if self.load_all:
             fgs = [self.fgs[x].astype(np.float32) / 255 for x in self.characters_idx[idx]]
             bg = random.choice(self.bgs).astype(np.float32) / 255
@@ -108,6 +158,23 @@ class DatasetGenerator:
         else:
             bg = self.random_corp(bg, output_size)
 
+        if random.randint(0, 1) == 0:
+            # generate sharp background
+            d = 50
+            counts = []
+            for i in range(0, d):
+                ms = max(output_size)
+                r = random.randint(ms * 2 // 10, ms * 6 // 10)
+                x = output_size[1] // 2 + r * math.cos(math.radians(i / d * 360))
+                y = output_size[0] // 2 + r * math.sin(math.radians(i / d * 360))
+                counts.append([x, y])
+            counts = [np.array(counts, dtype=np.int)]
+            bg_mask = cv2.drawContours(np.zeros([*output_size, 1], dtype=np.float32), counts, 0, (1.0,), cv2.FILLED)
+            bg = bg * bg_mask + 1 - bg_mask
+            if random.randint(0, 1) == 0:
+                edge_color = (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1))
+                bg = cv2.drawContours(bg, counts, 0, edge_color, ms // 200)
+
         # mix fgs and bg
         image = bg
         label = np.zeros([*output_size, 1], dtype=np.float32)
@@ -120,6 +187,9 @@ class DatasetGenerator:
             image = mask * image_i + (1 - mask) * image
             label = np.fmax(label_i, label)
         label = (label > 0.3).astype(np.float32)
+
+        if random.randint(0, 1) == 0:
+            image = self.simulate_light(image)
 
         # random quality
         if random.randint(0, 3) == 0:

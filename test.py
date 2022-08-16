@@ -49,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, default='isnet_is',
                         choices=["isnet_is", "isnet", "u2net", "u2netl", "modnet"],
                         help='net name')
-    parser.add_argument('--ckpt', type=str, default='saved_models/isnet_best.ckpt',
+    parser.add_argument('--ckpt', type=str, default='saved_models/isnetis_best.ckpt',
                         help='resume training from ckpt')
     parser.add_argument('--out', type=str, default='out',
                         help='output dir')
