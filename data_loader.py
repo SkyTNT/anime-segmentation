@@ -80,7 +80,7 @@ class RandomColor(object):
 
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
-        if random.randint(0, 5) == 0:
+        if random.randint(0, 1) == 0:
             image = transforms.functional.adjust_brightness(image, random.choice([0.5, 1.2]))
             image = transforms.functional.adjust_contrast(image, random.choice([0.5, 1.5]))
         return {'image': image, 'label': label}
@@ -94,7 +94,7 @@ class GaussianNoise(object):
 
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
-        if random.randint(0, 5) == 0:
+        if random.randint(0, 1) == 0:
             noise = torch.normal(self.mean, self.sigma, image.shape)
             image = image + noise
             image = image.clip(0, 1)
