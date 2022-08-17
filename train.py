@@ -140,9 +140,9 @@ def main(opt):
                                                           with_trimap=opt.net == "modnet")
 
     train_dataloader = DataLoader(train_dataset, batch_size=opt.batch_size_train, shuffle=True, persistent_workers=True,
-                                  num_workers=opt.workers_train, pin_memory=False)
+                                  num_workers=opt.workers_train, pin_memory=True)
     val_dataloader = DataLoader(val_dataset, batch_size=opt.batch_size_val, shuffle=False, persistent_workers=True,
-                                num_workers=opt.workers_val, pin_memory=False)
+                                num_workers=opt.workers_val, pin_memory=True)
     print("---define model---")
     if opt.resume_ckpt != "":
         anime_seg = AnimeSegmentation.load_from_checkpoint(opt.resume_ckpt, net_name=opt.net)

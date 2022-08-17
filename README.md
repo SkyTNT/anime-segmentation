@@ -71,12 +71,16 @@ arguments:
 
 `python inference.py --net isnet_is --ckpt path/to/isnet_is.ckpt --data-dir path/to/input_data --out out --img-size 1024 --only-matted`
 
+## Export model
+
+`python export.py --net isnet_is --ckpt path/to/isnet_is.ckpt --to onnx --out isnet.onnx --img-size 1024`
+
 ## Dataset
 
 This dataset is a combined dataset of [AniSeg](https://github.com/jerryli27/AniSeg#about-the-models) and [character_bg_seg_data](https://github.com/ShuhongChen/bizarre-pose-estimator#download).
 
-I clean the dataset using [DeepDanbooru](https://github.com/KichangKim/DeepDanbooru) first then manually, to make sue all label is anime character.
+I clean the dataset using [DeepDanbooru](https://github.com/KichangKim/DeepDanbooru) first then manually, to make sue all mask is anime character.
 
-Click to [download]() the dataset.
+Click to [download](https://drive.google.com/file/d/1-18FMgEwv5HNO1KahZqPqXNk6v_iNYxl/view?usp=sharing) the dataset.
 
 

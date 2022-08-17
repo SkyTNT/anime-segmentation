@@ -73,6 +73,19 @@ class RandomCrop(object):
         return {'image': image, 'label': label}
 
 
+class RandomColor(object):
+
+    def __init__(self):
+        pass
+
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        if random.randint(0, 5) == 0:
+            image = transforms.functional.adjust_brightness(image, random.choice([0.5, 1.2]))
+            image = transforms.functional.adjust_contrast(image, random.choice([0.5, 1.5]))
+        return {'image': image, 'label': label}
+
+
 class GaussianNoise(object):
 
     def __init__(self, mean=0, sigma=0.1):
@@ -81,7 +94,7 @@ class GaussianNoise(object):
 
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
-        if random.randint(0, 1) == 0:
+        if random.randint(0, 5) == 0:
             noise = torch.normal(self.mean, self.sigma, image.shape)
             image = image + noise
             image = image.clip(0, 1)
@@ -177,8 +190,9 @@ def create_training_datasets(data_root, fgs_dir, bgs_dir, imgs_dir, masks_dir, f
     print("val imgs: ", len(val_img_list))
     print("val masks: ", len(val_mask_list))
     print("---")
-    transform = transforms.Compose([RescalePad(image_size + image_size // 4), RandomCrop(image_size), GaussianNoise()])
-    transform_generator = transforms.Compose([GaussianNoise()])
+    transform = transforms.Compose([RescalePad(image_size + image_size // 4), RandomCrop(image_size),
+                                    RandomColor(), GaussianNoise()])
+    transform_generator = transforms.Compose([RandomColor(), GaussianNoise()])
     train_generator = DatasetGenerator(train_bg_list, train_fg_list, (image_size, image_size), (image_size, image_size))
     train_dataset = SalObjDataset(train_img_list, train_mask_list, train_generator,
                                   transform=transform, transform_generator=transform_generator,
