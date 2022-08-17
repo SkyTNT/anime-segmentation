@@ -7,6 +7,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torch.utils.data import Dataset, DataLoader
 import torch.optim as optim
+from ranger import Ranger
 from data_loader import create_training_datasets
 from model import ISNetDIS, ISNetGTEncoder, U2NET, U2NET_full2, U2NET_lite2, MODNet
 import pytorch_lightning as pl
@@ -65,7 +66,8 @@ class AnimeSegmentation(pl.LightningModule):
             return model
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.net.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
+        # optimizer = optim.Adam(self.net.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
+        optimizer = Ranger(self.net.parameters(), lr=0.001)
         return optimizer
 
     def forward(self, x):
