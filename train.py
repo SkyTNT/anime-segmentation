@@ -58,7 +58,7 @@ class AnimeSegmentation(pl.LightningModule):
     def try_load(cls, net_name, ckpt_path, map_location=None):
         state_dict = torch.load(ckpt_path)
         if "epoch" in state_dict:
-            return cls.load_from_checkpoint(ckpt_path, net_name=net_name,map_location=map_location)
+            return cls.load_from_checkpoint(ckpt_path, net_name=net_name, map_location=map_location)
         else:
             model = cls(net_name)
             model.net.load_state_dict(state_dict)
@@ -125,6 +125,7 @@ def get_gt_encoder(train_dataloader, val_dataloader, opt):
                       devices=opt.devices, max_epochs=opt.gt_epoch,
                       benchmark=opt.benchmark, accumulate_grad_batches=opt.acc_step,
                       check_val_every_n_epoch=opt.val_epoch, log_every_n_steps=opt.log_step,
+                      strategy="ddp_find_unused_parameters_false" if opt.devices > 1 else None,
                       )
     trainer.fit(gt_encoder, train_dataloader, val_dataloader)
     return gt_encoder.net
