@@ -117,7 +117,7 @@ class WithTrimap(object):
         return {'image': image, 'label': label, 'trimap': trimap}
 
 
-class SalObjDataset(Dataset):
+class AnimeSegDataset(Dataset):
     def __init__(self, real_img_list, real_mask_list, generator: DatasetGenerator = None,
                  transform=None, transform_generator=None, with_trimap=False):
         self.dataset_generator = generator
@@ -194,11 +194,11 @@ def create_training_datasets(data_root, fgs_dir, bgs_dir, imgs_dir, masks_dir, f
                                     RandomColor(), GaussianNoise()])
     transform_generator = transforms.Compose([RandomColor(), GaussianNoise()])
     train_generator = DatasetGenerator(train_bg_list, train_fg_list, (image_size, image_size), (image_size, image_size))
-    train_dataset = SalObjDataset(train_img_list, train_mask_list, train_generator,
+    train_dataset = AnimeSegDataset(train_img_list, train_mask_list, train_generator,
                                   transform=transform, transform_generator=transform_generator,
                                   with_trimap=with_trimap)
     val_generator = DatasetGenerator(val_bg_list, val_fg_list, (image_size, image_size), (image_size, image_size))
-    val_dataset = SalObjDataset(val_img_list, val_mask_list, val_generator,
+    val_dataset = AnimeSegDataset(val_img_list, val_mask_list, val_generator,
                                 transform=transform, transform_generator=transform_generator,
                                 with_trimap=with_trimap)
 

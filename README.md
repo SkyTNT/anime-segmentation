@@ -1,5 +1,5 @@
 # Anime Segmentation
-Segmentation for anime character based on SOTA models
+Segmentation for anime character
 
 ##  Models
 
@@ -81,6 +81,6 @@ This dataset is a combined dataset of [AniSeg](https://github.com/jerryli27/AniS
 
 I clean the dataset using [DeepDanbooru](https://github.com/KichangKim/DeepDanbooru) first then manually, to make sue all mask is anime character.
 
-Click to [download](https://drive.google.com/file/d/1-18FMgEwv5HNO1KahZqPqXNk6v_iNYxl/view?usp=sharing) the dataset.
+Click to [download](https://drive.google.com/file/d/1zj874ueqM5IQGavxoHbbmFJ75SRZS2Kh/view?usp=sharing)
 
 
