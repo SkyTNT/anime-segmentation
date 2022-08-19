@@ -186,7 +186,7 @@ class DatasetGenerator:
                 mask = cv2.erode(mask, self.mask_erode_kernel)[:, :, np.newaxis]
             image = mask * image_i + (1 - mask) * image
             label = np.fmax(label_i, label)
-        label = (label > 0.3).astype(np.float32)
+        label = (label > 0.5).astype(np.float32)
 
         if random.randint(0, 1) == 0:
             image = self.simulate_light(image)
