@@ -40,7 +40,7 @@ def main(opt):
         image = np.concatenate((image, mask * 255, cv2.cvtColor(label, cv2.COLOR_GRAY2RGB)), axis=1).astype(
             np.uint8)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(f'out/{i:06d}.jpg', image)
+        cv2.imwrite(f'{opt.out}/{i:06d}.jpg', image)
 
 
 if __name__ == "__main__":
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, default='isnet_is',
                         choices=["isnet_is", "isnet", "u2net", "u2netl", "modnet"],
                         help='net name')
-    parser.add_argument('--ckpt', type=str, default='saved_models/isnetis_best.ckpt',
+    parser.add_argument('--ckpt', type=str, default='saved_models/isnetis.ckpt',
                         help='resume training from ckpt')
     parser.add_argument('--out', type=str, default='out',
                         help='output dir')
