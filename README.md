@@ -1,6 +1,8 @@
 # Anime Segmentation
 Segmentation for anime character
 
+![](https://github.com/SkyTNT/anime-segmentation/blob/main/doc/banner.jpg?raw=true)
+
 ##  Models
 
 [ISNet](https://github.com/xuebinqin/DIS), [U2Net](https://github.com/xuebinqin/U-2-Net), [MODNet](https://github.com/ZHKKKe/MODNet)
