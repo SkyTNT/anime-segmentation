@@ -32,7 +32,7 @@ if __name__ == "__main__":
                         help='net name')
     parser.add_argument('--ckpt', type=str, default='saved_models/isnetis.ckpt',
                         help='model checkpoint path')
-    parser.add_argument('--out', type=str, default='saved_models/isnet_best.onnx',
+    parser.add_argument('--out', type=str, default='saved_models/isnetis.onnx',
                         help='output path')
     parser.add_argument('--to', type=str, default='onnx', choices=["only_net_state_dict", "onnx"],
                         help='export to ()')
