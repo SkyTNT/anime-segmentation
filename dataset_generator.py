@@ -189,19 +189,6 @@ class DatasetGenerator:
         label = (label > 0.5).astype(np.float32)
 
         if random.randint(0, 1) == 0:
-            # random color blocks
-            temp_img = np.zeros_like(image)
-            for _ in range(0, 10):
-                w = random.randint(output_size[1] // 10, output_size[1] // 3)
-                h = random.randint(output_size[0] // 10, output_size[0] // 3)
-                x = random.randint(0, output_size[1] - w)
-                y = random.randint(0, output_size[0] - h)
-                color = (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1))
-                temp_img = cv2.rectangle(temp_img, [x, y], [x + w, y + h], color, cv2.FILLED)
-            a = random.uniform(0.5, 0.8)
-            image = a * image + a * temp_img
-
-        if random.randint(0, 1) == 0:
             image = self.simulate_light(image)
 
         # random quality
