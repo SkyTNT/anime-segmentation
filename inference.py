@@ -11,7 +11,7 @@ from tqdm import tqdm
 from train import AnimeSegmentation
 
 
-def get_mask(model, input_img, use_amp=True, s=640, itr=1):
+def get_mask(model, input_img, use_amp=True, s=640):
     h0, w0 = h, w = input_img.shape[0], input_img.shape[1]
     if h > w:
         h, w = s, int(s * w / h)
@@ -31,9 +31,6 @@ def get_mask(model, input_img, use_amp=True, s=640, itr=1):
             pred = model(tmpImg)
         pred = pred[0, :, ph // 2:ph // 2 + h, pw // 2:pw // 2 + w]
         pred = cv2.resize(pred.cpu().numpy().transpose((1, 2, 0)).repeat(3, 2), (w0, h0))
-    if itr > 1:
-        return get_mask(model, input_img * pred, use_amp, s, itr - 1)
-    else:
         return pred
 
 
