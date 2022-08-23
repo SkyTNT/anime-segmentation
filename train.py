@@ -56,7 +56,7 @@ class AnimeSegmentation(pl.LightningModule):
 
     @classmethod
     def try_load(cls, net_name, ckpt_path, map_location=None):
-        state_dict = torch.load(ckpt_path)
+        state_dict = torch.load(ckpt_path, map_location=map_location)
         if "epoch" in state_dict:
             return cls.load_from_checkpoint(ckpt_path, net_name=net_name, map_location=map_location)
         else:
