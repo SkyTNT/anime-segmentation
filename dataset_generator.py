@@ -85,7 +85,7 @@ class DatasetGenerator:
         fg = cv2.warpAffine(fg, np.array([[1, 0, dx], [0, 1, dy]], dtype=np.float32),
                             output_size[::-1], flags=cv2.INTER_LINEAR,
                             borderMode=cv2.BORDER_CONSTANT)
-        scale = random.uniform(0.5, 1.5)
+        scale = random.uniform(0.5, 2)
         dx = random.randint(-w // 3, w // 3)
         dy = random.randint(-h // 3, h // 3)
         angle = random.randint(-90, 90)
@@ -165,7 +165,7 @@ class DatasetGenerator:
         else:
             bg = self.random_corp(bg, output_size)
 
-        aug = random.randint(0, 5) > 0
+        aug = random.randint(0, 10) > 0
 
         if aug and random.randint(0, 1) == 0:
             # generate sharp background
