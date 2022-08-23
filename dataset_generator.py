@@ -190,7 +190,7 @@ class DatasetGenerator:
 
         if random.randint(0, 1) == 0:
             # random color blocks
-            temp_img = np.zeros([*output_size, 4])
+            temp_img = np.zeros([*output_size, 4], dtype=np.float32)
             for _ in range(0, 10):
                 if random.randint(0, 1) == 0:
                     w = random.randint(output_size[1] // 10, output_size[1] // 3)
