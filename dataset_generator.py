@@ -55,6 +55,7 @@ class DatasetGenerator:
                 fg = cv2.cvtColor(cv2.imread(fg_path, cv2.IMREAD_UNCHANGED), cv2.COLOR_BGRA2RGBA)
                 assert fg.shape[2] == 4
                 self.fgs.append(fg)
+        self.bgs_offset = [0] * self.__len__()
 
     @staticmethod
     def random_corp(img, out_size=None):
@@ -137,16 +138,20 @@ class DatasetGenerator:
         return len(self.characters_idx)
 
     def __getitem__(self, idx):
+        # to traverse backgrounds
+        bg_idx = (idx + self.bgs_offset[idx]) % len(self.bg_list)
+        self.bgs_offset[idx] += self.__len__()  # init DataLoader with persistent_workers=True to take effect
+
         output_size = [random.randint(self.output_size_range_h[0], self.output_size_range_h[1]),
                        random.randint(self.output_size_range_w[0], self.output_size_range_w[1])]
 
         if self.load_all:
             fgs = [self.fgs[x].astype(np.float32) / 255 for x in self.characters_idx[idx]]
-            bg = random.choice(self.bgs).astype(np.float32) / 255
+            bg = self.bgs[bg_idx].astype(np.float32) / 255
         else:
             fgs = [cv2.cvtColor(cv2.imread(self.fg_list[x], cv2.IMREAD_UNCHANGED), cv2.COLOR_BGRA2RGBA).astype(
                 np.float32) / 255 for x in self.characters_idx[idx]]
-            bg = cv2.cvtColor(cv2.imread(random.choice(self.bg_list), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB).astype(
+            bg = cv2.cvtColor(cv2.imread(self.bg_list[bg_idx], cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB).astype(
                 np.float32) / 255
 
         # resize to output_size
@@ -160,7 +165,9 @@ class DatasetGenerator:
         else:
             bg = self.random_corp(bg, output_size)
 
-        if random.randint(0, 1) == 0:
+        aug = random.randint(0, 5) > 0
+
+        if aug and random.randint(0, 1) == 0:
             # generate sharp background
             d = 50
             counts = []
@@ -190,7 +197,7 @@ class DatasetGenerator:
             label = np.fmax(label_i, label)
         label = (label > 0.5).astype(np.float32)
 
-        if random.randint(0, 1) == 0:
+        if aug and random.randint(0, 1) == 0:
             # random color blocks
             temp_img = np.zeros([*output_size, 4], dtype=np.float32)
             for _ in range(0, 10):
@@ -217,7 +224,7 @@ class DatasetGenerator:
             temp_img, mask = temp_img[:, :, 0:3], temp_img[:, :, 3:]
             image = mask * temp_img + (1 - mask) * image
 
-        if random.randint(0, 1) == 0:
+        if aug and random.randint(0, 1) == 0:
             # random texts
             image = Image.fromarray((image * 255).astype(np.uint8))
             draw = ImageDraw.Draw(image)
@@ -234,13 +241,13 @@ class DatasetGenerator:
                 draw.text((x, y), text, color, font=fontText)
             image = np.asarray(image).astype(np.float32) / 255
 
-        if random.randint(0, 1) == 0:
+        if aug and random.randint(0, 1) == 0:
             image = self.simulate_light(image)
 
         # random quality
-        if random.randint(0, 1) == 0:
+        if aug and random.randint(0, 1) == 0:
             image = cv2.blur(image, [3, 3])
-        if random.randint(0, 1) == 0:
+        if aug and random.randint(0, 1) == 0:
             image = Image.fromarray((image * 255).astype(np.uint8))
             image_stream = BytesIO()
             image.save(image_stream, "JPEG", quality=random.randrange(50, 100), optimice=True)
