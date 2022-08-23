@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import random
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 from scipy.ndimage import measurements
 
@@ -42,6 +42,8 @@ class DatasetGenerator:
             characters_idx.append([characters_total + x for x in range(0, num) if characters_total + x < len(fg_list)])
             characters_total += num
         self.characters_idx = characters_idx
+
+        self.texts = [chr(x) for x in range(0x3040, 0x30ff + 1)]
 
         if load_all:
             print("loading bgs")
@@ -197,7 +199,7 @@ class DatasetGenerator:
                     h = random.randint(output_size[0] // 10, output_size[0] // 3)
                     x = random.randint(0, output_size[1] - w)
                     y = random.randint(0, output_size[0] - h)
-                    color = (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1), random.uniform(0.4, 0.6))
+                    color = (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1), random.uniform(0.3, 0.5))
                     temp_img = cv2.rectangle(temp_img, [x, y], [x + w, y + h], color, cv2.FILLED)
                     if random.randint(0, 1) == 0:
                         color = (color[0] * 0.5, color[1] * 0.5, color[2] * 0.5, color[2])
@@ -207,13 +209,30 @@ class DatasetGenerator:
                     r = random.randint((output_size[0] + output_size[0]) // 40, (output_size[0] + output_size[0]) // 8)
                     x = random.randint(r, output_size[1] - r)
                     y = random.randint(r, output_size[0] - r)
-                    color = (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1), random.uniform(0.4, 0.6))
+                    color = (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1), random.uniform(0.3, 0.5))
                     temp_img = cv2.circle(temp_img, [x, y], r, color, cv2.FILLED)
                     if random.randint(0, 1) == 0:
                         color = (color[0] * 0.5, color[1] * 0.5, color[2] * 0.5, color[2])
                         temp_img = cv2.circle(temp_img, [x, y], r, color, (output_size[0] + output_size[0]) // 200)
             temp_img, mask = temp_img[:, :, 0:3], temp_img[:, :, 3:]
             image = mask * temp_img + (1 - mask) * image
+
+        if random.randint(0, 1) == 0:
+            # random texts
+            image = Image.fromarray((image * 255).astype(np.uint8))
+            draw = ImageDraw.Draw(image)
+            for _ in range(0, random.randint(1, 10)):
+                s = random.randint(10, 40)
+                text = "".join([random.choice(self.texts) for _ in range(0, 10)])
+                x = random.randint(0, output_size[1] - s * len(text))
+                y = random.randint(0, output_size[0] - s)
+                fontText = ImageFont.truetype("font.otf", s, encoding="utf-8")
+                if random.randint(0, 1) == 0:
+                    color = (255, 255, 255)
+                else:
+                    color = (0, 0, 0)
+                draw.text((x, y), text, color, font=fontText)
+            image = np.asarray(image).astype(np.float32) / 255
 
         if random.randint(0, 1) == 0:
             image = self.simulate_light(image)
