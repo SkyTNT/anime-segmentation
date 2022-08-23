@@ -67,7 +67,7 @@ if __name__ == "__main__":
     if not os.path.exists(opt.out):
         os.mkdir(opt.out)
 
-    for i, path in enumerate(tqdm(glob.glob(f"{opt.data}/*.*"))):
+    for i, path in enumerate(tqdm(sorted(glob.glob(f"{opt.data}/*.*")))):
         img = cv2.cvtColor(cv2.imread(path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
         mask = get_mask(model, img, use_amp=not opt.fp32, s=opt.img_size)
         if opt.only_matted:
