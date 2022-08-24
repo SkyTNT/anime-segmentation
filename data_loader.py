@@ -81,6 +81,8 @@ class RandomColor(object):
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
         if random.randint(0, 1) == 0:
+            if random.randint(0, 1) == 0:
+                image = transforms.functional.rgb_to_grayscale(image, 3)
             image = transforms.functional.adjust_brightness(image, random.choice([0.5, 1.2]))
             image = transforms.functional.adjust_contrast(image, random.choice([0.5, 1.5]))
         return {'image': image, 'label': label}
@@ -195,11 +197,11 @@ def create_training_datasets(data_root, fgs_dir, bgs_dir, imgs_dir, masks_dir, f
     transform_generator = transforms.Compose([RandomColor(), GaussianNoise()])
     train_generator = DatasetGenerator(train_bg_list, train_fg_list, (image_size, image_size), (image_size, image_size))
     train_dataset = AnimeSegDataset(train_img_list, train_mask_list, train_generator,
-                                  transform=transform, transform_generator=transform_generator,
-                                  with_trimap=with_trimap)
+                                    transform=transform, transform_generator=transform_generator,
+                                    with_trimap=with_trimap)
     val_generator = DatasetGenerator(val_bg_list, val_fg_list, (image_size, image_size), (image_size, image_size))
     val_dataset = AnimeSegDataset(val_img_list, val_mask_list, val_generator,
-                                transform=transform, transform_generator=transform_generator,
-                                with_trimap=with_trimap)
+                                  transform=transform, transform_generator=transform_generator,
+                                  with_trimap=with_trimap)
 
     return train_dataset, val_dataset
