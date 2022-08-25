@@ -81,8 +81,6 @@ class RandomColor(object):
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
         if random.randint(0, 1) == 0:
-            if random.randint(0, 1) == 0:
-                image = transforms.functional.rgb_to_grayscale(image, 3)
             image = transforms.functional.adjust_brightness(image, random.choice([0.5, 1.2]))
             image = transforms.functional.adjust_contrast(image, random.choice([0.5, 1.5]))
         return {'image': image, 'label': label}

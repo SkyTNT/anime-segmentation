@@ -282,14 +282,6 @@ class DatasetGenerator:
         if aug and random.randint(0, 1) == 0:
             image = self.simulate_light(image)
 
-        if aug and random.randint(0, 1) == 0:
-            s = random.randint(1, 2) * 2 + 1
-            k = np.ones((s, s), dtype=np.float32)
-            if random.randint(0, 1) == 0:
-                image = cv2.erode(image, k)
-            else:
-                image = cv2.dilate(image, k)
-
         # random quality
         if aug and random.randint(0, 1) == 0:
             image = cv2.blur(image, [3, 3])
