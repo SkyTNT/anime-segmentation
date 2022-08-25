@@ -222,10 +222,9 @@ class DatasetGenerator:
         for fg in fgs:
             fg = self.process_fg(fg, output_size)
             image_i, label_i = fg[:, :, 0:3], fg[:, :, 3:]
-            mask = label_i
             if random.randint(0, 1) == 0:
-                mask = grey_erosion(mask[:, :, 0], (3, 3))[:, :, np.newaxis]
-            image = mask * image_i + (1 - mask) * image
+                label_i = grey_erosion(label_i[:, :, 0], (3, 3))[:, :, np.newaxis]
+            image = label_i * image_i + (1 - label_i) * image
             label = np.fmax(label_i, label)
         label = (label > 0.5).astype(np.float32)
 
