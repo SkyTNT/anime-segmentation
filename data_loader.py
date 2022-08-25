@@ -111,7 +111,7 @@ class WithTrimap(object):
         trimap = label[0].clone().numpy()
         h, w = trimap.shape
         s = int((h + w) * 0.025)
-        trimap[np.where((grey_dilation(trimap, size=(s, s)) - grey_erosion(trimap, size=(s, s))) > 0.5)] = 0.5
+        trimap[grey_dilation(trimap, size=(s, s)) - grey_erosion(trimap, size=(s, s)) > 0.5] = 0.5
         trimap = trimap[np.newaxis, :, :]
         trimap = torch.from_numpy(trimap)
         return {'image': image, 'label': label, 'trimap': trimap}
