@@ -37,8 +37,7 @@ def main(opt):
         image = image.permute(1, 2, 0).numpy() * 255
         label = label.permute(1, 2, 0).numpy() * 255
         mask = get_mask(model, image, use_amp=not opt.fp32, s=opt.img_size)
-        image = np.concatenate((image, mask * 255, cv2.cvtColor(label, cv2.COLOR_GRAY2RGB)), axis=1).astype(
-            np.uint8)
+        image = np.concatenate((image, mask.repeat(3, 2) * 255, label.repeat(3, 2)), axis=1).astype(np.uint8)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         cv2.imwrite(f'{opt.out}/{i:06d}.jpg', image)
 
