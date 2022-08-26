@@ -164,7 +164,8 @@ class DatasetGenerator:
         else:
             bg = self.random_corp(bg, output_size)
 
-        aug = random.randint(0, 1) == 0
+        # aug = random.randint(0, 1) == 0
+        aug = True
 
         if aug and random.randint(0, 1) == 0:
             # generate sharp background
