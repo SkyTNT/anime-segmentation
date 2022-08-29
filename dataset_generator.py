@@ -43,6 +43,7 @@ class DatasetGenerator:
         self.characters_idx = characters_idx
 
         self.texts = [chr(x) for x in range(0x3040, 0x30ff + 1)]
+        self.fonts = []
 
         if load_all:
             print("loading bgs")
@@ -240,21 +241,12 @@ class DatasetGenerator:
                     y = random.randint(0, output_size[0] - h)
                     color = (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1), random.uniform(0.3, 0.5))
                     temp_img = cv2.rectangle(temp_img, [x, y], [x + w, y + h], color, cv2.FILLED)
-                    if random.randint(0, 1) == 0:
-                        color = (color[0] * 0.5, color[1] * 0.5, color[2] * 0.5, color[2])
-                        s = output_size[0] + output_size[0]
-                        temp_img = cv2.rectangle(temp_img, [x, y], [x + w, y + h], color,
-                                                 random.randint(s // 500, s // 400))
                 else:
                     r = random.randint((output_size[0] + output_size[0]) // 40, (output_size[0] + output_size[0]) // 8)
                     x = random.randint(r, output_size[1] - r)
                     y = random.randint(r, output_size[0] - r)
                     color = (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1), random.uniform(0.3, 0.5))
                     temp_img = cv2.circle(temp_img, [x, y], r, color, cv2.FILLED)
-                    if random.randint(0, 1) == 0:
-                        color = (color[0] * 0.5, color[1] * 0.5, color[2] * 0.5, color[2])
-                        s = output_size[0] + output_size[0]
-                        temp_img = cv2.circle(temp_img, [x, y], r, color, random.randint(s // 500, s // 400))
             angle = random.randint(-90, 90)
             trans_mat = cv2.getRotationMatrix2D((output_size[1] // 2, output_size[0] // 2), angle, 1)
             temp_img = cv2.warpAffine(temp_img, trans_mat, output_size[::-1], flags=cv2.INTER_LINEAR,
@@ -267,16 +259,18 @@ class DatasetGenerator:
             image = Image.fromarray((image * 255).astype(np.uint8))
             draw = ImageDraw.Draw(image)
             for _ in range(0, random.randint(1, 10)):
-                s = random.randint(10, 40)
+                if len(self.fonts) == 0:
+                    self.fonts = [ImageFont.truetype("font.otf", x, encoding="utf-8") for x in range(10, 30, 2)]
+                font = random.choice(self.fonts)
+                s = font.size
                 text = "".join([random.choice(self.texts) for _ in range(0, 10)])
                 x = random.randint(0, output_size[1] - s * len(text))
                 y = random.randint(0, output_size[0] - s)
-                fontText = ImageFont.truetype("font.otf", s, encoding="utf-8")
                 if random.randint(0, 1) == 0:
                     color = (255, 255, 255)
                 else:
                     color = (0, 0, 0)
-                draw.text((x, y), text, color, font=fontText)
+                draw.text((x, y), text, color, font=font)
             image = np.asarray(image).astype(np.float32) / 255
 
         if aug and random.randint(0, 1) == 0:
