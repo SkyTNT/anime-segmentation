@@ -24,7 +24,7 @@ def vector_included_angle(v1, v2):
 class DatasetGenerator:
 
     def __init__(self, bg_list, fg_list, output_size_range_h=(512, 1024), output_size_range_w=(512, 1024),
-                 characters_range=(1, 1), load_all=False):
+                 characters_range=(0, 3), load_all=False):
         self.bg_list = bg_list
         self.fg_list = fg_list
         self.output_size_range_h = output_size_range_h
@@ -85,7 +85,7 @@ class DatasetGenerator:
         fg = cv2.warpAffine(fg, np.array([[1, 0, dx], [0, 1, dy]], dtype=np.float32),
                             output_size[::-1], flags=cv2.INTER_LINEAR,
                             borderMode=cv2.BORDER_CONSTANT)
-        scale = random.uniform(0.5, 2)
+        scale = random.uniform(0.4, 0.8)
         dx = random.randint(-w // 3, w // 3)
         dy = random.randint(-h // 3, h // 3)
         angle = random.randint(-90, 90)
@@ -224,8 +224,6 @@ class DatasetGenerator:
         for fg in fgs:
             fg = self.process_fg(fg, output_size)
             image_i, label_i = fg[:, :, 0:3], fg[:, :, 3:]
-            if random.randint(0, 1) == 0:
-                label_i = grey_erosion(label_i[:, :, 0], (3, 3))[:, :, np.newaxis]
             image = label_i * image_i + (1 - label_i) * image
             label = np.fmax(label_i, label)
         label = (label > 0.5).astype(np.float32)
