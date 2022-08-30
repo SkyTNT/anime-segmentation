@@ -32,11 +32,19 @@ def get_net(net_name):
 
 
 def f1_torch(pred, gt):
+    # micro F1-score
     pred = pred.float().view(pred.shape[0], -1)
     gt = gt.float().view(gt.shape[0], -1)
-    tp = torch.sum(pred * gt, dim=1)
-    precision = tp / (pred.sum(dim=1) + 0.0001)
-    recall = tp / (gt.sum(dim=1) + 0.0001)
+    tp1 = torch.sum(pred * gt, dim=1)
+    tp_fp1 = torch.sum(pred, dim=1)
+    tp_fn1 = torch.sum(gt, dim=1)
+    pred = 1 - pred
+    gt = 1 - gt
+    tp2 = torch.sum(pred * gt, dim=1)
+    tp_fp2 = torch.sum(pred, dim=1)
+    tp_fn2 = torch.sum(gt, dim=1)
+    precision = (tp1 + tp2) / (tp_fp1 + tp_fp2 + 0.0001)
+    recall = (tp1 + tp2) / (tp_fn1 + tp_fn2 + 0.0001)
     f1 = (1 + 0.3) * precision * recall / (0.3 * precision + recall + 0.0001)
     return precision, recall, f1
 
