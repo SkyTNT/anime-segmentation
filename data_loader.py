@@ -73,6 +73,21 @@ class RandomCrop(object):
         return {'image': image, 'label': label}
 
 
+class RandomRot(object):
+
+    def __init__(self):
+        pass
+
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        angle = random.uniform(-90, 90)
+        image = transforms.functional.rotate(torch.cat([image, label], dim=0), angle,
+                                             interpolation=transforms.InterpolationMode.BILINEAR,
+                                             fill=[0, 0, 0, 0])
+        image, label = image[:-1], image[-1:]
+        return {'image': image, 'label': label}
+
+
 class RandomColor(object):
 
     def __init__(self):
@@ -139,6 +154,8 @@ class AnimeSegDataset(Dataset):
             label = cv2.imread(self.real_mask_list[idx], cv2.IMREAD_GRAYSCALE)[:, :, np.newaxis]
             image, label = image.astype(np.float32) / 255, label.astype(np.float32) / 255
             label = (label > 0.3).astype(np.float32)
+            image = image[10:-10, 10:-10]
+            label = label[10:-10, 10:-10]  # in this dataset, there is a problem in the edge of some label
         else:
             image, label = self.dataset_generator[idx - len(self.real_img_list)]
         image, label = torch.from_numpy(image).permute(2, 0, 1), torch.from_numpy(label).permute(2, 0, 1)
@@ -190,7 +207,7 @@ def create_training_datasets(data_root, fgs_dir, bgs_dir, imgs_dir, masks_dir, f
     print("val imgs: ", len(val_img_list))
     print("val masks: ", len(val_mask_list))
     print("---")
-    transform = transforms.Compose([RescalePad(image_size + image_size // 4), RandomCrop(image_size),
+    transform = transforms.Compose([RescalePad(image_size + image_size // 4), RandomRot(), RandomCrop(image_size),
                                     RandomColor(), GaussianNoise()])
     transform_generator = transforms.Compose([RandomColor(), GaussianNoise()])
     train_generator = DatasetGenerator(train_bg_list, train_fg_list, (image_size, image_size), (image_size, image_size))
@@ -201,5 +218,4 @@ def create_training_datasets(data_root, fgs_dir, bgs_dir, imgs_dir, masks_dir, f
     val_dataset = AnimeSegDataset(val_img_list, val_mask_list, val_generator,
                                   transform=transform, transform_generator=transform_generator,
                                   with_trimap=with_trimap)
-
     return train_dataset, val_dataset

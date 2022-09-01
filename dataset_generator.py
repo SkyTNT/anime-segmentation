@@ -277,6 +277,32 @@ class DatasetGenerator:
         if aug and self.random.randint(0, 1) == 0:
             image = self.simulate_light(image)
 
+        if aug and self.random.randint(0, 1) == 0:
+            # random border
+            mask = np.zeros([*output_size, 1], dtype=np.float32)
+            if self.random.randint(0, 1) == 0:
+                p1 = [self.random.randint(0, output_size[1] // 10), self.random.randint(0, output_size[0] // 10)]
+                p2 = [output_size[1] - self.random.randint(0, output_size[1] // 10),
+                      output_size[0] - self.random.randint(0, output_size[0] // 10)]
+                mask = cv2.rectangle(mask, p1, p2, (1.0,), cv2.FILLED)
+                image = image * mask + 1 - mask
+                label = label * mask
+                if self.random.randint(0, 1) == 0:
+                    s = output_size[0] + output_size[0]
+                    image = cv2.rectangle(image, p1, p2, (0, 0, 0), self.random.randint(s // 600, s // 500))
+
+            else:
+                p = [output_size[1] // 2 + self.random.randint(0, output_size[1] // 50),
+                     output_size[0] // 2 + self.random.randint(0, output_size[0] // 50)]
+                r = min(output_size) // 2
+                r = self.random.randint(r * 9 // 10, r)
+                mask = cv2.circle(mask, p, r, (1.0,), cv2.FILLED)
+                image = image * mask + 1 - mask
+                label = label * mask
+                if self.random.randint(0, 1) == 0:
+                    s = output_size[0] + output_size[0]
+                    image = cv2.circle(image, p, r, (0, 0, 0), self.random.randint(s // 600, s // 500))
+
         # random quality
         if aug and self.random.randint(0, 1) == 0:
             image = cv2.blur(image, [3, 3])
