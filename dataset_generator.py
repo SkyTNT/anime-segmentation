@@ -288,8 +288,8 @@ class DatasetGenerator:
                 image = image * mask + 1 - mask
                 label = label * mask
                 if self.random.randint(0, 1) == 0:
-                    s = output_size[0] + output_size[0]
-                    image = cv2.rectangle(image, p1, p2, (0, 0, 0), self.random.randint(s // 600, s // 500))
+                    s = max(output_size)
+                    image = cv2.rectangle(image, p1, p2, (0, 0, 0), self.random.randint(s // 600, s // 400))
 
             else:
                 p = [output_size[1] // 2 + self.random.randint(0, output_size[1] // 50),
@@ -300,8 +300,8 @@ class DatasetGenerator:
                 image = image * mask + 1 - mask
                 label = label * mask
                 if self.random.randint(0, 1) == 0:
-                    s = output_size[0] + output_size[0]
-                    image = cv2.circle(image, p, r, (0, 0, 0), self.random.randint(s // 600, s // 500))
+                    s = max(output_size)
+                    image = cv2.circle(image, p, r, (0, 0, 0), self.random.randint(s // 600, s // 400))
 
         # random quality
         if aug and self.random.randint(0, 1) == 0:
