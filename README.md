@@ -75,6 +75,10 @@ arguments:
   --log-step LOG_STEP   log training loss every n steps
   --val-epoch VAL_EPOCH
                         valid and save every n epoch
+  --cache-epoch CACHE_EPOCH
+                        update cache every n epoch
+  --cache CACHE         ratio (cache to entire training dataset), higher
+                        value require more memory, set 0 to disable cache
 ```
 
 ## Inference

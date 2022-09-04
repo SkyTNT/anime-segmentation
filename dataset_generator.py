@@ -4,6 +4,8 @@ import time
 import cv2
 import numpy as np
 import random
+import ctypes
+import multiprocessing as mp
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
@@ -56,7 +58,7 @@ class DatasetGenerator:
                 fg = cv2.cvtColor(cv2.imread(fg_path, cv2.IMREAD_UNCHANGED), cv2.COLOR_BGRA2RGBA)
                 assert fg.shape[2] == 4
                 self.fgs.append(fg)
-        self.bgs_offset = [0] * self.__len__()
+        self.bgs_offset = mp.Array(ctypes.c_long, self.__len__())
 
     def random_corp(self, img, out_size=None):
         h, w = img.shape[:2]
@@ -138,7 +140,7 @@ class DatasetGenerator:
     def __getitem__(self, idx):
         # to traverse backgrounds
         bg_idx = (idx + self.bgs_offset[idx]) % len(self.bg_list)
-        self.bgs_offset[idx] += self.__len__()  # init DataLoader with persistent_workers=True to take effect
+        self.bgs_offset[idx] += 1
 
         output_size = [self.random.randint(self.output_size_range_h[0], self.output_size_range_h[1]),
                        self.random.randint(self.output_size_range_w[0], self.output_size_range_w[1])]

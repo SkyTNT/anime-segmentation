@@ -146,7 +146,8 @@ def main(opt):
     train_dataset, val_dataset = create_training_datasets(opt.data_dir, opt.fg_dir, opt.bg_dir, opt.img_dir,
                                                           opt.mask_dir, opt.fg_ext, opt.bg_ext, opt.img_ext,
                                                           opt.mask_ext, opt.data_split, opt.img_size,
-                                                          with_trimap=opt.net == "modnet")
+                                                          with_trimap=opt.net == "modnet",
+                                                          cache_ratio=opt.cache, cache_update_epoch=opt.cache_epoch)
 
     train_dataloader = DataLoader(train_dataset, batch_size=opt.batch_size_train, shuffle=True, persistent_workers=True,
                                   num_workers=opt.workers_train, pin_memory=True)
@@ -243,6 +244,11 @@ if __name__ == "__main__":
                         help='log training loss every n steps')
     parser.add_argument('--val-epoch', type=int, default=1,
                         help='valid and save every n epoch')
+    parser.add_argument('--cache-epoch', type=int, default=3,
+                        help='update cache every n epoch')
+    parser.add_argument('--cache', type=float, default=0,
+                        help='ratio (cache to entire training dataset), '
+                             'higher values require more memory, set 0 to disable cache')
 
     opt = parser.parse_args()
     print(opt)
