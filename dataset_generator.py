@@ -70,7 +70,7 @@ class DatasetGenerator:
         img = img[top:top + out_size[0], left:left + out_size[1]]
         return img
 
-    def process_fg(self, fg, output_size):
+    def process_fg(self, fg, output_size, scale_range=(0.2, 0.8)):
         assert fg.shape[2] == 4
         h, w = fg.shape[:2]
         if output_size[0] < h or output_size[1] < w:
@@ -86,7 +86,7 @@ class DatasetGenerator:
         fg = cv2.warpAffine(fg, np.array([[1, 0, dx], [0, 1, dy]], dtype=np.float32),
                             output_size[::-1], flags=cv2.INTER_LINEAR,
                             borderMode=cv2.BORDER_CONSTANT)
-        scale = self.random.uniform(0.4, 0.8)
+        scale = self.random.uniform(*scale_range)
         dx = self.random.randint(-w // 3, w // 3)
         dy = self.random.randint(-h // 3, h // 3)
         angle = self.random.randint(-90, 90)
@@ -224,11 +224,18 @@ class DatasetGenerator:
         image = bg
         label = np.zeros([*output_size, 1], dtype=np.float32)
         for fg in fgs:
-            fg = self.process_fg(fg, output_size)
+            fg = self.process_fg(fg, output_size, (0.8, 1.2) if len(fgs) == 1 else (0.2, 0.8))
             image_i, label_i = fg[:, :, 0:3], fg[:, :, 3:]
-            image = label_i * image_i + (1 - label_i) * image
+            mask = label_i
+            if self.random.randint(0, 1) == 0:
+                mask = cv2.blur(mask, [5, 5])[:, :, np.newaxis]
+            image_i = image_i * label_i + 1 - label_i
+            image = mask * image_i + (1 - mask) * image
             label = np.fmax(label_i, label)
         label = (label > 0.5).astype(np.float32)
+
+        if aug and self.random.randint(0, 1) == 0:
+            image = cv2.medianBlur(image, 3)
 
         if aug and self.random.randint(0, 1) == 0:
             # random color blocks
