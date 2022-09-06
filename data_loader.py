@@ -98,8 +98,10 @@ class RandomColor(object):
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
         if random.randint(0, 1) == 0:
-            image = transforms.functional.adjust_brightness(image, random.choice([0.5, 1.2]))
-            image = transforms.functional.adjust_contrast(image, random.choice([0.3, 1.5]))
+            image = transforms.functional.adjust_brightness(image, random.choice([
+                random.uniform(0.4, 0.6), random.uniform(1, 1.2)]))
+            image = transforms.functional.adjust_contrast(image, random.choice([
+                random.uniform(0.3, 0.5), random.uniform(1, 1.5)]))
         return {'image': image, 'label': label}
 
 
