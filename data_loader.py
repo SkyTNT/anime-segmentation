@@ -97,23 +97,25 @@ class RandomColor(object):
 
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
+        low_definition = False
         if random.randint(0, 1) == 0:
-            image = transforms.functional.adjust_brightness(image, random.choice([
-                random.uniform(0.4, 0.6), random.uniform(1, 1.2)]))
-            image = transforms.functional.adjust_contrast(image, random.choice([
-                random.uniform(0.3, 0.5), random.uniform(1, 1.5)]))
-        return {'image': image, 'label': label}
+            b = random.choice([random.uniform(0.5, 0.6), random.uniform(1, 1.2)])
+            c = random.choice([random.uniform(0.4, 0.5), random.uniform(1, 1.5)])
+            image = transforms.functional.adjust_brightness(image, b)
+            image = transforms.functional.adjust_contrast(image, c)
+            low_definition = b <= 0.6 and c <= 0.5
+        return {'image': image, 'label': label, "low_definition": low_definition}
 
 
 class GaussianNoise(object):
 
-    def __init__(self, mean=0, sigma=0.05):
+    def __init__(self, mean=0, sigma=0.1):
         self.mean = mean
         self.sigma = sigma
 
     def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-        if random.randint(0, 1) == 0:
+        image, label, low_definition = sample['image'], sample['label'], sample["low_definition"]
+        if random.randint(0, 1) == 0 and not low_definition:
             noise = torch.normal(self.mean, self.sigma, image.shape)
             image = image + noise
             image = image.clip(0, 1)
