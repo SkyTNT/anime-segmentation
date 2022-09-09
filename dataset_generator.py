@@ -208,15 +208,14 @@ class DatasetGenerator:
         if aug and self.random.randint(0, 1) == 0:
             # convert to sketch
             is_sketch = True
-            t = self.random.randint(0, 4) if len(fgs) == 1 else self.random.randint(0, 2)
-            if t != 4:
-                image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)[:, :, np.newaxis]
-                image_edge = cv2.adaptiveThreshold((image_gray * 255).astype(np.uint8),
-                                                   255, cv2.ADAPTIVE_THRESH_MEAN_C,
-                                                   cv2.THRESH_BINARY,
-                                                   blockSize=3,
-                                                   C=7).astype(np.float32) / 255
-                image_edge = image_edge[:, :, np.newaxis]
+            t = self.random.randint(0, 3) if len(fgs) == 1 else self.random.randint(0, 2)
+            image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)[:, :, np.newaxis]
+            image_edge = cv2.adaptiveThreshold((image_gray * 255).astype(np.uint8),
+                                               255, cv2.ADAPTIVE_THRESH_MEAN_C,
+                                               cv2.THRESH_BINARY,
+                                               blockSize=3,
+                                               C=7).astype(np.float32) / 255
+            image_edge = image_edge[:, :, np.newaxis]
 
             if t == 0:
                 mask = np.full((*output_size, 1), [0.5], dtype=np.float32)
@@ -250,9 +249,6 @@ class DatasetGenerator:
                 image_gray = (image_gray > threshold).astype(np.float32)
                 image_gray = image_gray + 1 - label
                 image = (image_gray * image_edge).repeat(3, 2)
-            elif t == 4:
-                image = cv2.pencilSketch((image * 255).astype(np.uint8), sigma_s=60, sigma_r=0.3,
-                                         shade_factor=0.02)[1].astype(np.float32) / 255
 
         if aug and self.random.randint(0, 1) == 0:
             # random color blocks
@@ -264,7 +260,7 @@ class DatasetGenerator:
                     x = self.random.randint(0, output_size[1] - w)
                     y = self.random.randint(0, output_size[0] - h)
                     color = (self.random.uniform(0, 1), self.random.uniform(0, 1),
-                             self.random.uniform(0, 1), self.random.uniform(0.2, 0.4))
+                             self.random.uniform(0, 1), self.random.uniform(0.4, 0.5))
                     temp_img = cv2.rectangle(temp_img, [x, y], [x + w, y + h], color, cv2.FILLED)
                 else:
                     r = self.random.randint((output_size[0] + output_size[0]) // 40,
@@ -272,7 +268,7 @@ class DatasetGenerator:
                     x = self.random.randint(r, output_size[1] - r)
                     y = self.random.randint(r, output_size[0] - r)
                     color = (self.random.uniform(0, 1), self.random.uniform(0, 1),
-                             self.random.uniform(0, 1), self.random.uniform(0.2, 0.4))
+                             self.random.uniform(0, 1), self.random.uniform(0.4, 0.5))
                     temp_img = cv2.circle(temp_img, [x, y], r, color, cv2.FILLED)
             angle = self.random.randint(-90, 90)
             trans_mat = cv2.getRotationMatrix2D((output_size[1] // 2, output_size[0] // 2), angle, 1)
