@@ -288,7 +288,7 @@ class DatasetGenerator:
         if aug and self.random.randint(0, 1) == 0:
             h, w = output_size
             image = cv2.resize(image, (w // 2, h // 2))
-            image = cv2.resize(image, (w, h))
+            image = cv2.resize(image, (w, h), interpolation=self.random.choice([cv2.INTER_LINEAR, cv2.INTER_NEAREST]))
         if aug and self.random.randint(0, 1) == 0:
             image = Image.fromarray((image * 255).astype(np.uint8))
             image_stream = BytesIO()
