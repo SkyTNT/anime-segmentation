@@ -197,56 +197,34 @@ class DatasetGenerator:
                 fg[ph // 2:ph // 2 + new_h, pw // 2:pw // 2 + new_w] = fg0
                 fg = self.random_corp(fg, output_size)
             else:
-                fg = self.process_fg(fg, output_size, (1, 1.2) if len(fgs) == 1 else (0.4, 0.8))
+                fg = self.process_fg(fg, output_size)
             image_i, label_i = fg[:, :, 0:3], fg[:, :, 3:]
             mask = label_i * cv2.blur(label_i, [5, 5])[:, :, np.newaxis]
             image = mask * image_i + (1 - mask) * image
             label = np.fmax(label_i, label)
         label = (label > 0.5).astype(np.float32)
 
-        is_sketch = False
-        if aug and self.random.randint(0, 1) == 0:
+        if aug and self.random.randint(0, 1) == 0 and len(fgs) == 1:
             # convert to sketch
-            is_sketch = True
-            t = self.random.randint(0, 3) if len(fgs) == 1 else self.random.randint(0, 2)
+            t = self.random.randint(0, 1)
             image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)[:, :, np.newaxis]
             image_edge = cv2.adaptiveThreshold((image_gray * 255).astype(np.uint8),
                                                255, cv2.ADAPTIVE_THRESH_MEAN_C,
                                                cv2.THRESH_BINARY,
-                                               blockSize=3,
-                                               C=7).astype(np.float32) / 255
+                                               blockSize=5,
+                                               C=5).astype(np.float32) / 255
             image_edge = image_edge[:, :, np.newaxis]
-
             if t == 0:
-                mask = np.full((*output_size, 1), [0.5], dtype=np.float32)
-                a = self.random.uniform(-math.pi, math.pi)
-                d = np.array([math.cos(a), math.sin(a)])
-                r = np.linalg.norm(output_size) // 2
-                c = np.array(output_size[::-1]) // 2
-                p1 = c + np.array([math.cos(a - math.pi / 4), math.sin(a - math.pi / 4)]) * r * 1.4
-                p2 = c + np.array([math.cos(a + math.pi / 4), math.sin(a + math.pi / 4)]) * r * 1.4
-
-                n = 300
-                for i in range(0, n):
-                    p1_ = (p1 - 2 * r * d * i / n + self.random.normalvariate(0, 2)).astype(np.int)
-                    p2_ = (p2 - 2 * r * d * i / n + self.random.normalvariate(0, 2)).astype(np.int)
-                    mask = cv2.line(mask, p1_, p2_, (1,), 1)
-                mask = mask * label + 0.5 * (1 - label)
-                image = mask * image + 1 - mask
-                image = image * image_edge
-            elif t == 1:
-                image = image * image_edge
-            elif t == 2 and len(fgs) != 0:
-                # comic style
                 image_gray = cv2.medianBlur(image_gray, 5)[:, :, np.newaxis]
                 if self.random.randint(0, 1) == 0:
                     image_gray = image_gray * label
                     image_gray = image_gray + 1 - label
                 image = (image_gray * image_edge).repeat(3, 2)
-            elif t == 3 and len(fgs) != 0:
+            elif t == 1:
                 image_gray = image_gray * label
                 threshold = image_gray.sum() / label.sum()
-                image_gray = (image_gray > threshold).astype(np.float32)
+                image_gray[image_gray > threshold] = 1
+                image_gray = np.floor(image_gray * 3) / 3
                 image_gray = image_gray + 1 - label
                 image = (image_gray * image_edge).repeat(3, 2)
 
@@ -307,16 +285,10 @@ class DatasetGenerator:
                                    flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)[:, :, np.newaxis]
 
         # random quality
-        if aug and self.random.randint(0, 1) == 0 and not is_sketch:
-            if self.random.randint(0, 1) == 0:
-                image = cv2.erode(image, np.ones((3, 3)))
-            else:
-                image = cv2.dilate(image, np.ones((3, 3)))
         if aug and self.random.randint(0, 1) == 0:
-            if self.random.randint(0, 1) == 0:
-                image = cv2.medianBlur(image, 3)
-            else:
-                image = cv2.blur(image, [3, 3])
+            h, w = output_size
+            image = cv2.resize(image, (w // 2, h // 2))
+            image = cv2.resize(image, (w, h))
         if aug and self.random.randint(0, 1) == 0:
             image = Image.fromarray((image * 255).astype(np.uint8))
             image_stream = BytesIO()

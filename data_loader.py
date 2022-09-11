@@ -99,11 +99,11 @@ class RandomColor(object):
         image, label = sample['image'], sample['label']
         low_definition = False
         if random.randint(0, 1) == 0:
-            b = random.choice([random.uniform(0.3, 0.6), random.uniform(1, 1.2)])
-            c = random.choice([random.uniform(0.3, 0.5), random.uniform(1, 1.5)])
+            b = random.choice([random.uniform(0.4, 0.5), random.uniform(1, 1.2)])
+            c = random.choice([random.uniform(0.4, 0.5), random.uniform(1, 1.5)])
             image = transforms.functional.adjust_brightness(image, b)
             image = transforms.functional.adjust_contrast(image, c)
-            low_definition = b <= 0.6 and c <= 0.5
+            low_definition = b <= 0.5 and c <= 0.5
         return {'image': image, 'label': label, "low_definition": low_definition}
 
 
