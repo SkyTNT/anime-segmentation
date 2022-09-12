@@ -109,7 +109,7 @@ class RandomColor(object):
 
 class GaussianNoise(object):
 
-    def __init__(self, mean=0, sigma=0.1):
+    def __init__(self, mean=0, sigma=0.05):
         self.mean = mean
         self.sigma = sigma
 

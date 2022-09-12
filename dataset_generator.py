@@ -70,7 +70,7 @@ class DatasetGenerator:
         img = img[top:top + out_size[0], left:left + out_size[1]]
         return img
 
-    def process_fg(self, fg, output_size, scale_range=(0.2, 0.8)):
+    def process_fg(self, fg, output_size, scale):
         assert fg.shape[2] == 4
         h, w = fg.shape[:2]
         r = min(output_size[0] / h, output_size[1] / w)
@@ -85,7 +85,6 @@ class DatasetGenerator:
         fg = cv2.warpAffine(fg, np.array([[1, 0, dx], [0, 1, dy]], dtype=np.float32),
                             output_size[::-1], flags=cv2.INTER_LINEAR,
                             borderMode=cv2.BORDER_CONSTANT)
-        scale = self.random.uniform(*scale_range)
         dx = self.random.randint(-w // 3, w // 3)
         dy = self.random.randint(-h // 3, h // 3)
         angle = self.random.randint(-90, 90)
@@ -183,6 +182,7 @@ class DatasetGenerator:
         # mix fgs and bg
         image = bg
         label = np.zeros([*output_size, 1], dtype=np.float32)
+        small = False
         for fg in fgs:
             if len(fgs) == 1 and self.random.randint(0, 1) == 0:
                 fg = fgs[0]
@@ -197,25 +197,28 @@ class DatasetGenerator:
                 fg[ph // 2:ph // 2 + new_h, pw // 2:pw // 2 + new_w] = fg0
                 fg = self.random_corp(fg, output_size)
             else:
-                fg = self.process_fg(fg, output_size)
+                scale = self.random.uniform(0.2, 0.8)
+                fg = self.process_fg(fg, output_size, scale)
+                small = scale < 0.6
             image_i, label_i = fg[:, :, 0:3], fg[:, :, 3:]
             mask = label_i * cv2.blur(label_i, [5, 5])[:, :, np.newaxis]
             image = mask * image_i + (1 - mask) * image
             label = np.fmax(label_i, label)
         label = (label > 0.5).astype(np.float32)
 
-        if aug and self.random.randint(0, 1) == 0 and len(fgs) == 1:
+        if aug and self.random.randint(0, 1) == 0 and len(fgs) == 1 and not small:
             # convert to sketch
-            t = self.random.randint(0, 1)
-            image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)[:, :, np.newaxis]
+            t = self.random.randint(0, 2)
+            image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            image_gray = cv2.GaussianBlur(image_gray, [3, 3], sigmaX=0, sigmaY=0)[:, :, np.newaxis]
             image_edge = cv2.adaptiveThreshold((image_gray * 255).astype(np.uint8),
                                                255, cv2.ADAPTIVE_THRESH_MEAN_C,
                                                cv2.THRESH_BINARY,
                                                blockSize=5,
                                                C=5).astype(np.float32) / 255
             image_edge = image_edge[:, :, np.newaxis]
+            image_edge = image_edge * (1 - (label - cv2.erode(label, np.ones([3, 3]))[:, :, np.newaxis]))
             if t == 0:
-                image_gray = cv2.medianBlur(image_gray, 5)[:, :, np.newaxis]
                 if self.random.randint(0, 1) == 0:
                     image_gray = image_gray * label
                     image_gray = image_gray + 1 - label
@@ -227,33 +230,35 @@ class DatasetGenerator:
                 image_gray = np.floor(image_gray * 3) / 3
                 image_gray = image_gray + 1 - label
                 image = (image_gray * image_edge).repeat(3, 2)
+            elif t == 2:
+                image = image_edge.repeat(3, 2)
 
-        if aug and self.random.randint(0, 1) == 0:
-            # random color blocks
-            temp_img = np.zeros([*output_size, 4], dtype=np.float32)
-            for _ in range(0, self.random.randint(1, 10)):
-                if self.random.randint(0, 1) == 0:
-                    w = self.random.randint(output_size[1] // 20, output_size[1] // 3)
-                    h = self.random.randint(output_size[0] // 20, output_size[0] // 3)
-                    x = self.random.randint(0, output_size[1] - w)
-                    y = self.random.randint(0, output_size[0] - h)
-                    color = (self.random.uniform(0, 1), self.random.uniform(0, 1),
-                             self.random.uniform(0, 1), self.random.uniform(0.4, 0.5))
-                    temp_img = cv2.rectangle(temp_img, [x, y], [x + w, y + h], color, cv2.FILLED)
-                else:
-                    r = self.random.randint((output_size[0] + output_size[0]) // 40,
-                                            (output_size[0] + output_size[0]) // 8)
-                    x = self.random.randint(r, output_size[1] - r)
-                    y = self.random.randint(r, output_size[0] - r)
-                    color = (self.random.uniform(0, 1), self.random.uniform(0, 1),
-                             self.random.uniform(0, 1), self.random.uniform(0.4, 0.5))
-                    temp_img = cv2.circle(temp_img, [x, y], r, color, cv2.FILLED)
-            angle = self.random.randint(-90, 90)
-            trans_mat = cv2.getRotationMatrix2D((output_size[1] // 2, output_size[0] // 2), angle, 1)
-            temp_img = cv2.warpAffine(temp_img, trans_mat, output_size[::-1], flags=cv2.INTER_LINEAR,
-                                      borderMode=cv2.BORDER_CONSTANT)
-            temp_img, mask = temp_img[:, :, 0:3], temp_img[:, :, 3:]
-            image = mask * temp_img + (1 - mask) * image
+        # if aug and self.random.randint(0, 1) == 0:
+        #     # random color blocks
+        #     temp_img = np.zeros([*output_size, 4], dtype=np.float32)
+        #     for _ in range(0, self.random.randint(1, 10)):
+        #         if self.random.randint(0, 1) == 0:
+        #             w = self.random.randint(output_size[1] // 20, output_size[1] // 3)
+        #             h = self.random.randint(output_size[0] // 20, output_size[0] // 3)
+        #             x = self.random.randint(0, output_size[1] - w)
+        #             y = self.random.randint(0, output_size[0] - h)
+        #             color = (self.random.uniform(0, 1), self.random.uniform(0, 1),
+        #                      self.random.uniform(0, 1), self.random.uniform(0.4, 0.5))
+        #             temp_img = cv2.rectangle(temp_img, [x, y], [x + w, y + h], color, cv2.FILLED)
+        #         else:
+        #             r = self.random.randint((output_size[0] + output_size[0]) // 40,
+        #                                     (output_size[0] + output_size[0]) // 8)
+        #             x = self.random.randint(r, output_size[1] - r)
+        #             y = self.random.randint(r, output_size[0] - r)
+        #             color = (self.random.uniform(0, 1), self.random.uniform(0, 1),
+        #                      self.random.uniform(0, 1), self.random.uniform(0.4, 0.5))
+        #             temp_img = cv2.circle(temp_img, [x, y], r, color, cv2.FILLED)
+        #     angle = self.random.randint(-90, 90)
+        #     trans_mat = cv2.getRotationMatrix2D((output_size[1] // 2, output_size[0] // 2), angle, 1)
+        #     temp_img = cv2.warpAffine(temp_img, trans_mat, output_size[::-1], flags=cv2.INTER_LINEAR,
+        #                               borderMode=cv2.BORDER_CONSTANT)
+        #     temp_img, mask = temp_img[:, :, 0:3], temp_img[:, :, 3:]
+        #     image = mask * temp_img + (1 - mask) * image
 
         if aug and self.random.randint(0, 1) == 0:
             # random texts
@@ -274,8 +279,8 @@ class DatasetGenerator:
                 draw.text((x, y), text, color, font=font)
             image = np.asarray(image).astype(np.float32) / 255
 
-        if aug and self.random.randint(0, 1) == 0:
-            image = self.simulate_light(image)
+        # if aug and self.random.randint(0, 1) == 0:
+        #     image = self.simulate_light(image)
 
         if aug:
             h, w = output_size
