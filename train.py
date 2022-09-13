@@ -69,7 +69,10 @@ class AnimeSegmentation(pl.LightningModule):
             return cls.load_from_checkpoint(ckpt_path, net_name=net_name, map_location=map_location)
         else:
             model = cls(net_name)
-            model.net.load_state_dict(state_dict)
+            if any([k.startswith("net.") for k, v in state_dict.items()]):
+                model.load_state_dict(state_dict)
+            else:
+                model.net.load_state_dict(state_dict)
             return model
 
     def configure_optimizers(self):

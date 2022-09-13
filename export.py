@@ -34,7 +34,7 @@ if __name__ == "__main__":
                         help='model checkpoint path')
     parser.add_argument('--out', type=str, default='saved_models/isnetis.onnx',
                         help='output path')
-    parser.add_argument('--to', type=str, default='onnx', choices=["only_net_state_dict", "onnx"],
+    parser.add_argument('--to', type=str, default='onnx', choices=["only_state_dict", "only_net_state_dict", "onnx"],
                         help='export to ()')
     parser.add_argument('--img-size', type=int, default=1024,
                         help='input image size')
@@ -43,7 +43,9 @@ if __name__ == "__main__":
 
     model = AnimeSegmentation.try_load(opt.net, opt.ckpt, "cpu")
     model.eval()
-    if opt.to == "only_net_state_dict":
+    if opt.to == "only_state_dict":
+        torch.save(model.state_dict(), opt.out)
+    elif opt.to == "only_net_state_dict":
         torch.save(model.net.state_dict(), opt.out)
     elif opt.to == "onnx":
         export_onnx(model, opt.img_size, opt.out)
