@@ -206,8 +206,10 @@ class DatasetGenerator:
             label = np.fmax(label_i, label)
         label = (label > 0.5).astype(np.float32)
 
+        is_sketch = False
         if aug and self.random.randint(0, 1) == 0 and len(fgs) == 1 and not small:
             # convert to sketch
+            is_sketch = True
             t = self.random.randint(0, 2)
             image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
             image_gray = cv2.GaussianBlur(image_gray, [3, 3], sigmaX=0, sigmaY=0)[:, :, np.newaxis]
@@ -232,6 +234,9 @@ class DatasetGenerator:
                 image = (image_gray * image_edge).repeat(3, 2)
             elif t == 2:
                 image = image_edge.repeat(3, 2)
+
+        if aug and self.random.randint(0, 1) == 0 and not is_sketch:
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)[:, :, np.newaxis].repeat(3, 2)
 
         # if aug and self.random.randint(0, 1) == 0:
         #     # random color blocks
