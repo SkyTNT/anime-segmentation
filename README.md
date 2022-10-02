@@ -95,6 +95,11 @@ This dataset is a combined dataset of [AniSeg](https://github.com/jerryli27/AniS
 
 I clean the dataset using [DeepDanbooru](https://github.com/KichangKim/DeepDanbooru) first then manually, to make sue all mask is anime character.
 
-Click to [download](https://drive.google.com/file/d/1zj874ueqM5IQGavxoHbbmFJ75SRZS2Kh/view?usp=sharing)
+#### download
 
-
+```shell
+git lfs install
+git clone https://huggingface.co/datasets/skytnt/anime-segmentation
+cd anime-segmentation
+unzip data/*.zip
+```
