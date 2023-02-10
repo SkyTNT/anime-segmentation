@@ -57,8 +57,7 @@ class AnimeSegmentation(pl.LightningModule):
         self.net = get_net(net_name)
         if net_name == "isnet_is":
             self.gt_encoder = get_net("isnet_gt")
-            for param in self.gt_encoder.parameters():
-                param.requires_grad = False
+            self.gt_encoder.requires_grad_(False)
         else:
             self.gt_encoder = None
 
@@ -157,14 +156,13 @@ def main(opt):
     val_dataloader = DataLoader(val_dataset, batch_size=opt.batch_size_val, shuffle=False, persistent_workers=True,
                                 num_workers=opt.workers_val, pin_memory=True)
     print("---define model---")
-    if opt.resume_ckpt != "":
-        anime_seg = AnimeSegmentation.load_from_checkpoint(opt.resume_ckpt, net_name=opt.net)
-    else:
+
+    if opt.pretrained_ckpt == "":
         anime_seg = AnimeSegmentation(opt.net)
-        if opt.pretrained_ckpt != "":
-            anime_seg.net.load_state_dict(torch.load(opt.pretrained_ckpt))
-        if opt.net == "isnet_is":
-            anime_seg.gt_encoder.load_state_dict(get_gt_encoder(train_dataloader, val_dataloader, opt).state_dict())
+    else:
+        anime_seg = AnimeSegmentation.try_load(opt.net, opt.pretrained_ckpt, "cpu")
+    if not opt.pretrained_ckpt and not opt.resume_ckpt and opt.net == "isnet_is":
+        anime_seg.gt_encoder.load_state_dict(get_gt_encoder(train_dataloader, val_dataloader, opt).state_dict())
 
     print("---start train---")
     checkpoint_callback = ModelCheckpoint(monitor='val/f1', mode="max", save_top_k=1, save_last=True,
@@ -175,7 +173,7 @@ def main(opt):
                       check_val_every_n_epoch=opt.val_epoch, log_every_n_steps=opt.log_step,
                       strategy="ddp_find_unused_parameters_false" if opt.devices > 1 else None,
                       callbacks=[checkpoint_callback])
-    trainer.fit(anime_seg, train_dataloader, val_dataloader)
+    trainer.fit(anime_seg, train_dataloader, val_dataloader, ckpt_path=opt.resume_ckpt or None)
 
 
 if __name__ == "__main__":
@@ -189,7 +187,7 @@ if __name__ == "__main__":
                              'u2netl: Train U2Net lite, '
                              'modnet: Train MODNet')
     parser.add_argument('--pretrained-ckpt', type=str, default='',
-                        help='load form pretrained ckpt of net')
+                        help='load form pretrained ckpt')
     parser.add_argument('--resume-ckpt', type=str, default='',
                         help='resume training from ckpt')
     parser.add_argument('--img-size', type=int, default=1024,
