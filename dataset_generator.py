@@ -267,16 +267,18 @@ class DatasetGenerator:
 
         if aug and self.random.randint(0, 1) == 0:
             # random texts
+            h, w = output_size
             image = Image.fromarray((image * 255).astype(np.uint8))
             draw = ImageDraw.Draw(image)
             for _ in range(0, self.random.randint(1, 10)):
                 if len(self.fonts) == 0:
-                    self.fonts = [ImageFont.truetype("font.otf", x, encoding="utf-8") for x in range(10, 60, 2)]
+                    s = min(h, w) // 100
+                    self.fonts = [ImageFont.truetype("font.otf", x, encoding="utf-8") for x in range(s, s * 5, 2)]
                 font = self.random.choice(self.fonts)
                 s = font.size
                 text = "".join([self.random.choice(self.texts) for _ in range(0, 10)])
-                x = self.random.randint(0, output_size[1] - s * len(text))
-                y = self.random.randint(0, output_size[0] - s)
+                x = self.random.randint(0, max(w - s * len(text), 0))
+                y = self.random.randint(0, max(h - s, 0))
                 if self.random.randint(0, 1) == 0:
                     color = (255, 255, 255)
                 else:

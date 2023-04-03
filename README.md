@@ -1,15 +1,15 @@
 # Anime Segmentation
 Segmentation for anime character
 
-![](https://github.com/SkyTNT/anime-segmentation/blob/main/doc/banner.jpg?raw=true)
+![](./doc/banner.jpg)
 
 ## Online Demo
 
 Integrated into [Huggingface Spaces 🤗](https://huggingface.co/spaces) using [Gradio](https://github.com/gradio-app/gradio). Try it out [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/skytnt/anime-remove-background)
 
-## Using Models
+## Support Models
 
-[ISNet](https://github.com/xuebinqin/DIS), [U2Net](https://github.com/xuebinqin/U-2-Net), [MODNet](https://github.com/ZHKKKe/MODNet)
+[ISNet](https://github.com/xuebinqin/DIS), [U2Net](https://github.com/xuebinqin/U-2-Net), [MODNet](https://github.com/ZHKKKe/MODNet), [InSPyReNet](https://github.com/plemeri/inspyrenet)
 
 ## Download Trained Models
 
@@ -30,18 +30,21 @@ detail
 ```
 arguments:
   -h, --help            show this help message and exit
-  --net {isnet_is,isnet,u2net,u2netl,modnet}
+  --net {isnet_is,isnet,u2net,u2netl,modnet,inspyrnet_res,inspyrnet_swin}
                         isnet_is: Train ISNet with intermediate feature supervision,
                         isnet: Train ISNet,
                         u2net: Train U2Net full,
                         u2netl: Train U2Net lite,
                         modnet: Train MODNet
+                        inspyrnet_res: Train InSPyReNet_Res2Net50
+                        inspyrnet_swin: Train InSPyReNet_SwinB
   --pretrained-ckpt PRETRAINED_CKPT
                         load form pretrained ckpt of net
   --resume-ckpt RESUME_CKPT
                         resume training from ckpt
   --img-size IMG_SIZE   image size for training and validation,
                         1024 recommend for ISNet,
+                        384 recommend for InSPyReNet,
                         640 recommend for others,
 
   --data-dir DATA_DIR   root dir of dataset
@@ -55,7 +58,8 @@ arguments:
   --mask-ext MASK_EXT   extension name of masks
   --data-split DATA_SPLIT
                         split rate for training and validation
-
+  
+  --lr LR               learning rate
   --epoch EPOCH         epoch num
   --gt-epoch GT_EPOCH   epoch for training ground truth encoder when net is isnet_is
   --batch-size-train BATCH_SIZE_TRAIN
@@ -101,5 +105,5 @@ I clean the dataset using [DeepDanbooru](https://github.com/KichangKim/DeepDanbo
 git lfs install
 git clone https://huggingface.co/datasets/skytnt/anime-segmentation
 cd anime-segmentation
-unzip data/*.zip
+unzip -q 'data/*.zip'
 ```

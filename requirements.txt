@@ -4,4 +4,6 @@ torch
 torchvision
 pytorch-lightning
 pillow
+kornia
+timm
 opencv-python

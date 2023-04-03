@@ -3,8 +3,8 @@
 
 import torch
 import torch.nn as nn
-from torchvision import models
 import torch.nn.functional as F
+from torchvision import models
 
 bce_loss = nn.BCEWithLogitsLoss(reduction="mean")
 
@@ -15,7 +15,9 @@ def muti_loss_fusion(preds, target):
 
     for i in range(0, len(preds)):
         if preds[i].shape[2] != target.shape[2] or preds[i].shape[3] != target.shape[3]:
-            tmp_target = F.interpolate(target, size=preds[i].size()[2:], mode='bilinear', align_corners=True)
+            tmp_target = F.interpolate(
+                target, size=preds[i].size()[2:], mode="bilinear", align_corners=True
+            )
             loss = loss + bce_loss(preds[i], tmp_target)
         else:
             loss = loss + bce_loss(preds[i], target)
@@ -30,13 +32,15 @@ l1_loss = nn.L1Loss(reduction="mean")
 smooth_l1_loss = nn.SmoothL1Loss(reduction="mean")
 
 
-def muti_loss_fusion_kl(preds, target, dfs, fs, mode='MSE'):
+def muti_loss_fusion_kl(preds, target, dfs, fs, mode="MSE"):
     loss0 = 0.0
     loss = 0.0
 
     for i in range(0, len(preds)):
         if preds[i].shape[2] != target.shape[2] or preds[i].shape[3] != target.shape[3]:
-            tmp_target = F.interpolate(target, size=preds[i].size()[2:], mode='bilinear', align_corners=True)
+            tmp_target = F.interpolate(
+                target, size=preds[i].size()[2:], mode="bilinear", align_corners=True
+            )
             loss = loss + bce_loss(preds[i], tmp_target)
         else:
             loss = loss + bce_loss(preds[i], target)
@@ -46,13 +50,15 @@ def muti_loss_fusion_kl(preds, target, dfs, fs, mode='MSE'):
     for i in range(0, len(dfs)):
         df = dfs[i]
         fs_i = fs[i]
-        if mode == 'MSE':
-            loss = loss + fea_loss(df, fs_i)  ### add the mse loss of features as additional constraints
-        elif mode == 'KL':
+        if mode == "MSE":
+            loss = loss + fea_loss(
+                df, fs_i
+            )  ### add the mse loss of features as additional constraints
+        elif mode == "KL":
             loss = loss + kl_loss(F.log_softmax(df, dim=1), F.softmax(fs_i, dim=1))
-        elif mode == 'MAE':
+        elif mode == "MAE":
             loss = loss + l1_loss(df, fs_i)
-        elif mode == 'SmoothL1':
+        elif mode == "SmoothL1":
             loss = loss + smooth_l1_loss(df, fs_i)
 
     return loss0, loss
@@ -62,7 +68,9 @@ class REBNCONV(nn.Module):
     def __init__(self, in_ch=3, out_ch=3, dirate=1, stride=1):
         super(REBNCONV, self).__init__()
 
-        self.conv_s1 = nn.Conv2d(in_ch, out_ch, 3, padding=1 * dirate, dilation=1 * dirate, stride=stride)
+        self.conv_s1 = nn.Conv2d(
+            in_ch, out_ch, 3, padding=1 * dirate, dilation=1 * dirate, stride=stride
+        )
         self.bn_s1 = nn.BatchNorm2d(out_ch)
         self.relu_s1 = nn.ReLU(inplace=True)
 
@@ -75,14 +83,13 @@ class REBNCONV(nn.Module):
 
 ## upsample tensor 'src' to have the same spatial size with tensor 'tar'
 def _upsample_like(src, tar):
-    src = F.interpolate(src, size=tar.shape[2:], mode='bilinear', align_corners=False)
+    src = F.interpolate(src, size=tar.shape[2:], mode="bilinear", align_corners=False)
 
     return src
 
 
 ### RSU-7 ###
 class RSU7(nn.Module):
-
     def __init__(self, in_ch=3, mid_ch=12, out_ch=3, img_size=512):
         super(RSU7, self).__init__()
 
@@ -165,7 +172,6 @@ class RSU7(nn.Module):
 
 ### RSU-6 ###
 class RSU6(nn.Module):
-
     def __init__(self, in_ch=3, mid_ch=12, out_ch=3):
         super(RSU6, self).__init__()
 
@@ -233,7 +239,6 @@ class RSU6(nn.Module):
 
 ### RSU-5 ###
 class RSU5(nn.Module):
-
     def __init__(self, in_ch=3, mid_ch=12, out_ch=3):
         super(RSU5, self).__init__()
 
@@ -291,7 +296,6 @@ class RSU5(nn.Module):
 
 ### RSU-4 ###
 class RSU4(nn.Module):
-
     def __init__(self, in_ch=3, mid_ch=12, out_ch=3):
         super(RSU4, self).__init__()
 
@@ -339,7 +343,6 @@ class RSU4(nn.Module):
 
 ### RSU-4F ###
 class RSU4F(nn.Module):
-
     def __init__(self, in_ch=3, mid_ch=12, out_ch=3):
         super(RSU4F, self).__init__()
 
@@ -374,22 +377,27 @@ class RSU4F(nn.Module):
 
 
 class myrebnconv(nn.Module):
-    def __init__(self, in_ch=3,
-                 out_ch=1,
-                 kernel_size=3,
-                 stride=1,
-                 padding=1,
-                 dilation=1,
-                 groups=1):
+    def __init__(
+        self,
+        in_ch=3,
+        out_ch=1,
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        dilation=1,
+        groups=1,
+    ):
         super(myrebnconv, self).__init__()
 
-        self.conv = nn.Conv2d(in_ch,
-                              out_ch,
-                              kernel_size=kernel_size,
-                              stride=stride,
-                              padding=padding,
-                              dilation=dilation,
-                              groups=groups)
+        self.conv = nn.Conv2d(
+            in_ch,
+            out_ch,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=groups,
+        )
         self.bn = nn.BatchNorm2d(out_ch)
         self.rl = nn.ReLU(inplace=True)
 
@@ -398,11 +406,12 @@ class myrebnconv(nn.Module):
 
 
 class ISNetGTEncoder(nn.Module):
-
     def __init__(self, in_ch=1, out_ch=1):
         super(ISNetGTEncoder, self).__init__()
 
-        self.conv_in = myrebnconv(in_ch, 16, 3, stride=2, padding=1)  # nn.Conv2d(in_ch,64,3,stride=2,padding=1)
+        self.conv_in = myrebnconv(
+            in_ch, 16, 3, stride=2, padding=1
+        )  # nn.Conv2d(in_ch,64,3,stride=2,padding=1)
 
         self.stage1 = RSU7(16, 16, 64)
         self.pool12 = nn.MaxPool2d(2, stride=2, ceil_mode=True)
@@ -488,7 +497,6 @@ class ISNetGTEncoder(nn.Module):
 
 
 class ISNetDIS(nn.Module):
-
     def __init__(self, in_ch=3, out_ch=1):
         super(ISNetDIS, self).__init__()
 
@@ -529,7 +537,7 @@ class ISNetDIS(nn.Module):
         # self.outconv = nn.Conv2d(6*out_ch,out_ch,1)
 
     @staticmethod
-    def compute_loss_kl(preds, targets, dfs, fs, mode='MSE'):
+    def compute_loss_kl(preds, targets, dfs, fs, mode="MSE"):
         return muti_loss_fusion_kl(preds, targets, dfs, fs, mode=mode)
 
     @staticmethod
