@@ -28,7 +28,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # model args
     parser.add_argument('--net', type=str, default='isnet_is',
-                        choices=["isnet_is", "isnet", "u2net", "u2netl", "modnet"],
+                        choices=["isnet_is", "isnet", "u2net", "u2netl", "modnet", "inspyrnet_res", "inspyrnet_swin"],
                         help='net name')
     parser.add_argument('--ckpt', type=str, default='saved_models/isnetis.ckpt',
                         help='model checkpoint path')
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     print(opt)
 
-    model = AnimeSegmentation.try_load(opt.net, opt.ckpt, "cpu")
+    model = AnimeSegmentation.try_load(opt.net, opt.ckpt, "cpu",img_size=opt.img_size)
     model.eval()
     if opt.to == "only_state_dict":
         torch.save(model.state_dict(), opt.out)
