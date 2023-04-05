@@ -9,7 +9,7 @@ from torch.utils.data import Dataset, DataLoader
 from tqdm.asyncio import tqdm
 
 from data_loader import create_training_datasets
-from train import AnimeSegmentation
+from train import AnimeSegmentation, net_names
 from inference import get_mask
 import warnings
 
@@ -25,7 +25,7 @@ def main(opt):
 
     device = torch.device(opt.device)
 
-    model = AnimeSegmentation.try_load(opt.net, opt.ckpt)
+    model = AnimeSegmentation.try_load(opt.net, opt.ckpt, img_size=opt.img_size)
     model.eval()
     model.to(device)
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # model args
     parser.add_argument('--net', type=str, default='isnet_is',
-                        choices=["isnet_is", "isnet", "u2net", "u2netl", "modnet"],
+                        choices=net_names,
                         help='net name')
     parser.add_argument('--ckpt', type=str, default='saved_models/isnetis.ckpt',
                         help='resume training from ckpt')

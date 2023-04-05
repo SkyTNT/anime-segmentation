@@ -8,7 +8,7 @@ import glob
 from torch.cuda import amp
 from tqdm import tqdm
 
-from train import AnimeSegmentation
+from train import AnimeSegmentation, net_names
 
 
 def get_mask(model, input_img, use_amp=True, s=640):
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # model args
     parser.add_argument('--net', type=str, default='isnet_is',
-                        choices=["isnet_is", "isnet", "u2net", "u2netl", "modnet"],
+                        choices=net_names,
                         help='net name')
     parser.add_argument('--ckpt', type=str, default='saved_models/isnetis.ckpt',
                         help='model checkpoint path')
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     device = torch.device(opt.device)
 
-    model = AnimeSegmentation.try_load(opt.net, opt.ckpt, opt.device)
+    model = AnimeSegmentation.try_load(opt.net, opt.ckpt, opt.device, img_size=opt.img_size)
     model.eval()
     model.to(device)
 

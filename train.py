@@ -16,6 +16,8 @@ from model import ISNetDIS, ISNetGTEncoder, U2NET, U2NET_full2, U2NET_lite2, MOD
 
 # warnings.filterwarnings("ignore")
 
+net_names = ["isnet_is", "isnet", "isnet_gt", "u2net", "u2netl", "modnet", "inspyrnet_res", "inspyrnet_swin"]
+
 def get_net(net_name, img_size):
     if net_name == "isnet":
         return ISNetDIS()
@@ -58,8 +60,7 @@ class AnimeSegmentation(pl.LightningModule):
 
     def __init__(self, net_name, img_size=None, lr=1e-3):
         super().__init__()
-        assert net_name in ["isnet_is", "isnet", "isnet_gt", "u2net", "u2netl", "modnet",
-                            "inspyrnet_res", "inspyrnet_swin"]
+        assert net_name in net_names
         self.img_size = img_size
         self.lr = lr
         self.net = get_net(net_name, img_size)
@@ -194,7 +195,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # model args
     parser.add_argument('--net', type=str, default='inspyrnet_swin',
-                        choices=["isnet_is", "isnet", "u2net", "u2netl", "modnet", "inspyrnet_res", "inspyrnet_swin"],
+                        choices=net_names,
                         help='isnet_is: Train ISNet with intermediate feature supervision, '
                              'isnet: Train ISNet, '
                              'u2net: Train U2Net full, '

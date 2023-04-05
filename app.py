@@ -5,7 +5,7 @@ import gradio as gr
 import numpy as np
 
 from inference import get_mask
-from train import AnimeSegmentation
+from train import AnimeSegmentation, net_names
 
 
 def rmbg_fn(img, img_size):
@@ -43,15 +43,7 @@ if __name__ == "__main__":
             model_path_input = gr.Dropdown(label="model")
             model_type = gr.Dropdown(
                 label="model type",
-                choices=[
-                    "isnet_is",
-                    "isnet",
-                    "u2net",
-                    "u2netl",
-                    "modnet",
-                    "inspyrnet_res",
-                    "inspyrnet_swin",
-                ],
+                choices=net_names,
             )
             model_image_size = gr.Slider(
                 label="image size", value=512, minimum=0, maximum=1280, step=32
