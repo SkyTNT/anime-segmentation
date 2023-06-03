@@ -43,10 +43,11 @@ if __name__ == "__main__":
             model_path_input = gr.Dropdown(label="model")
             model_type = gr.Dropdown(
                 label="model type",
+                value="isnet_is",
                 choices=net_names,
             )
             model_image_size = gr.Slider(
-                label="image size", value=512, minimum=0, maximum=1280, step=32
+                label="image size", value=1024, minimum=0, maximum=1280, step=32
             )
             load_model_path_btn.click(get_model_path, [], model_path_input)
             load_model_btn = gr.Button("Load")
