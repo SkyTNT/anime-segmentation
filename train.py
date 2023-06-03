@@ -186,7 +186,7 @@ def main(opt):
                       devices=opt.devices, max_epochs=opt.epoch,
                       benchmark=opt.benchmark, accumulate_grad_batches=opt.acc_step,
                       check_val_every_n_epoch=opt.val_epoch, log_every_n_steps=opt.log_step,
-                      strategy="ddp_find_unused_parameters_false" if opt.devices > 1 else 'auto',
+                      strategy="ddp_find_unused_parameters_false" if opt.devices > 1 else None,
                       callbacks=[checkpoint_callback])
     trainer.fit(anime_seg, train_dataloader, val_dataloader, ckpt_path=opt.resume_ckpt or None)
 
@@ -194,7 +194,7 @@ def main(opt):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # model args
-    parser.add_argument('--net', type=str, default='inspyrnet_swin',
+    parser.add_argument('--net', type=str, default='isnet_is',
                         choices=net_names,
                         help='isnet_is: Train ISNet with intermediate feature supervision, '
                              'isnet: Train ISNet, '
@@ -207,14 +207,14 @@ if __name__ == "__main__":
                         help='load form pretrained ckpt')
     parser.add_argument('--resume-ckpt', type=str, default='',
                         help='resume training from ckpt')
-    parser.add_argument('--img-size', type=int, default=640,
+    parser.add_argument('--img-size', type=int, default=1024,
                         help='image size for training and validation,'
                              '1024 recommend for ISNet,'
                              '384 recommend for InSPyReNet'
                              '640 recommend for others,')
 
     # dataset args
-    parser.add_argument('--data-dir', type=str, default='data',
+    parser.add_argument('--data-dir', type=str, default='../../dataset/anime-seg',
                         help='root dir of dataset')
     parser.add_argument('--fg-dir', type=str, default='fg',
                         help='relative dir of foreground')
