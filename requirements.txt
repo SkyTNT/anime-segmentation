@@ -7,3 +7,4 @@ pillow
 kornia
 timm
 opencv-python
+gradio
