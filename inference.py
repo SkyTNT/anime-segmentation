@@ -12,16 +12,15 @@ from train import AnimeSegmentation, net_names
 
 
 def get_mask(model, input_img, use_amp=True, s=640):
-    h0, w0 = h, w = input_img.shape[0], input_img.shape[1]
-    if h > w:
-        h, w = s, int(s * w / h)
-    else:
-        h, w = int(s * h / w), s
+    input_img = (input_img / 255).astype(np.float32)
+    h, w = h0, w0 = input_img.shape[:-1]
+    h, w = (s, int(s * w / h)) if h > w else (int(s * h / w), s)
     ph, pw = s - h, s - w
-    tmpImg = np.zeros([s, s, 3], dtype=np.float32)
-    tmpImg[ph // 2:ph // 2 + h, pw // 2:pw // 2 + w] = cv2.resize(input_img, (w, h)) / 255
-    tmpImg = tmpImg.transpose((2, 0, 1))
-    tmpImg = torch.from_numpy(tmpImg).unsqueeze(0).type(torch.FloatTensor).to(model.device)
+    img_input = np.zeros([s, s, 3], dtype=np.float32)
+    img_input[ph // 2:ph // 2 + h, pw // 2:pw // 2 + w] = cv2.resize(input_img, (w, h))
+    img_input = np.transpose(img_input, (2, 0, 1))
+    img_input = img_input[np.newaxis, :]
+    tmpImg = torch.from_numpy(img_input).type(torch.FloatTensor).to(model.device)
     with torch.no_grad():
         if use_amp:
             with amp.autocast():
@@ -29,8 +28,10 @@ def get_mask(model, input_img, use_amp=True, s=640):
             pred = pred.to(dtype=torch.float32)
         else:
             pred = model(tmpImg)
-        pred = pred[0, :, ph // 2:ph // 2 + h, pw // 2:pw // 2 + w]
-        pred = cv2.resize(pred.cpu().numpy().transpose((1, 2, 0)), (w0, h0))[:, :, np.newaxis]
+        pred = pred.cpu().numpy()[0]
+        pred = np.transpose(pred, (1, 2, 0))
+        pred = pred[ph // 2:ph // 2 + h, pw // 2:pw // 2 + w]
+        pred = cv2.resize(pred, (w0, h0))[:, :, np.newaxis]
         return pred
 
 

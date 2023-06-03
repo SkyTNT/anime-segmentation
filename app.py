@@ -22,6 +22,7 @@ def load_model(path, net_name, img_size):
     model = AnimeSegmentation.try_load(
         net_name=net_name, img_size=int(img_size), ckpt_path=path, map_location="cpu"
     )
+    model.eval()
     return "success"
 
 
