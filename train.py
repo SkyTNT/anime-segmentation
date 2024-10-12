@@ -36,7 +36,7 @@ def get_net(net_name, img_size):
         return InSPyReNet_Res2Net50(base_size=img_size)
     elif net_name == "inspyrnet_swin":
         return InSPyReNet_SwinB(base_size=img_size)
-    raise NotImplemented
+    raise NotImplementedError
 
 
 def f1_torch(pred, gt):
@@ -104,7 +104,7 @@ class AnimeSegmentation(pl.LightningModule,
             return self.net(x, True)[2]
         elif isinstance(self.net, InSPyReNet):
             return self.net.forward_inference(x)["pred"]
-        raise NotImplemented
+        raise NotImplementedError
 
     def training_step(self, batch, batch_idx):
         images, labels = batch["image"], batch["label"]
@@ -128,7 +128,7 @@ class AnimeSegmentation(pl.LightningModule,
             out = self.net.forward_train(images, labels)
             loss_args = out
         else:
-            raise NotImplemented
+            raise NotImplementedError
 
         loss0, loss = self.net.compute_loss(loss_args)
         self.log_dict({"train/loss": loss, "train/loss_tar": loss0})
