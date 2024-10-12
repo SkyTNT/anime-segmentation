@@ -8,3 +8,4 @@ kornia
 timm
 opencv-python
 gradio
+huggingface_hub >=0.22

@@ -8,6 +8,7 @@ import torch.optim as optim
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torch.utils.data import DataLoader
+from huggingface_hub import PyTorchModelHubMixin
 
 from data_loader import create_training_datasets
 from model import ISNetDIS, ISNetGTEncoder, U2NET, U2NET_full2, U2NET_lite2, MODNet \
@@ -56,7 +57,12 @@ def f1_torch(pred, gt):
     return precision, recall, f1
 
 
-class AnimeSegmentation(pl.LightningModule):
+class AnimeSegmentation(pl.LightningModule,
+                        PyTorchModelHubMixin,
+                        library_name="anime_segmentation",
+                        repo_url="https://github.com/SkyTNT/anime-segmentation",
+                        tags=["image-segmentation"]
+                        ):
 
     def __init__(self, net_name, img_size=None, lr=1e-3):
         super().__init__()
