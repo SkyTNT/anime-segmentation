@@ -8,6 +8,7 @@ import torch.optim as optim
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torch.utils.data import DataLoader
+from huggingface_hub import PyTorchModelHubMixin
 
 from data_loader import create_training_datasets
 from model import ISNetDIS, ISNetGTEncoder, U2NET, U2NET_full2, U2NET_lite2, MODNet \
@@ -35,7 +36,7 @@ def get_net(net_name, img_size):
         return InSPyReNet_Res2Net50(base_size=img_size)
     elif net_name == "inspyrnet_swin":
         return InSPyReNet_SwinB(base_size=img_size)
-    raise NotImplemented
+    raise NotImplementedError
 
 
 def f1_torch(pred, gt):
@@ -56,7 +57,12 @@ def f1_torch(pred, gt):
     return precision, recall, f1
 
 
-class AnimeSegmentation(pl.LightningModule):
+class AnimeSegmentation(pl.LightningModule,
+                        PyTorchModelHubMixin,
+                        library_name="anime_segmentation",
+                        repo_url="https://github.com/SkyTNT/anime-segmentation",
+                        tags=["image-segmentation"]
+                        ):
 
     def __init__(self, net_name, img_size=None, lr=1e-3):
         super().__init__()
@@ -98,7 +104,7 @@ class AnimeSegmentation(pl.LightningModule):
             return self.net(x, True)[2]
         elif isinstance(self.net, InSPyReNet):
             return self.net.forward_inference(x)["pred"]
-        raise NotImplemented
+        raise NotImplementedError
 
     def training_step(self, batch, batch_idx):
         images, labels = batch["image"], batch["label"]
@@ -122,7 +128,7 @@ class AnimeSegmentation(pl.LightningModule):
             out = self.net.forward_train(images, labels)
             loss_args = out
         else:
-            raise NotImplemented
+            raise NotImplementedError
 
         loss0, loss = self.net.compute_loss(loss_args)
         self.log_dict({"train/loss": loss, "train/loss_tar": loss0})
