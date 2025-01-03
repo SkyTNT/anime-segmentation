@@ -3,16 +3,21 @@ import glob
 
 import gradio as gr
 import numpy as np
+import cv2
 
 from inference import get_mask
 from train import AnimeSegmentation, net_names
 
 
-def rmbg_fn(img, img_size):
+def rmbg_fn(img, img_size, white_bg_checkbox):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     mask = get_mask(model, img, False, int(img_size))
-    img = (mask * img + 255 * (1 - mask)).astype(np.uint8)
-    mask = (mask * 255).astype(np.uint8)
-    img = np.concatenate([img, mask], axis=2, dtype=np.uint8)
+    if white_bg_checkbox:
+        img = np.concatenate((mask * img + 255 * (1 - mask), mask * 255), axis=2).astype(np.uint8)
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    else:
+        img = np.concatenate((mask * img + 1 - mask, mask * 255), axis=2).astype(np.uint8)
+        img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGRA)
     mask = mask.repeat(3, axis=2)
     return mask, img
 
@@ -28,7 +33,8 @@ def load_model(path, net_name, img_size):
 
 def get_model_path():
     model_paths = sorted(glob.glob("**/*.ckpt", recursive=True))
-    return model_path_input.update(choices=model_paths)
+    if model_paths:
+        return gr.update(choices=model_paths, value=model_paths[0])
 
 
 if __name__ == "__main__":
@@ -56,10 +62,14 @@ if __name__ == "__main__":
             load_model_btn.click(
                 load_model, [model_path_input, model_type, model_image_size], model_msg
             )
+        with gr.Accordion(label="Image Options", open=False):
+            white_bg_checkbox = gr.Checkbox(
+            label="White Background", value=False
+            )
         input_img = gr.Image(label="input image")
         run_btn = gr.Button(variant="primary")
         with gr.Row():
             output_mask = gr.Image(label="mask")
             output_img = gr.Image(label="result", image_mode="RGBA")
-        run_btn.click(rmbg_fn, [input_img, model_image_size], [output_mask, output_img])
+        run_btn.click(rmbg_fn, [input_img, model_image_size, white_bg_checkbox], [output_mask, output_img])
     app.launch(server_port=opt.port)

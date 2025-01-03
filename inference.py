@@ -55,6 +55,8 @@ if __name__ == "__main__":
                         help='disable mix precision')
     parser.add_argument('--only-matted', action='store_true', default=False,
                         help='only output matted image')
+    parser.add_argument('--bg-white', action='store_true', default=False,
+                        help='change transparent background to white')
 
     opt = parser.parse_args()
     print(opt)
@@ -71,7 +73,11 @@ if __name__ == "__main__":
     for i, path in enumerate(tqdm(sorted(glob.glob(f"{opt.data}/*.*")))):
         img = cv2.cvtColor(cv2.imread(path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
         mask = get_mask(model, img, use_amp=not opt.fp32, s=opt.img_size)
-        if opt.only_matted:
+        if opt.only_matted and opt.bg_white:
+            img = np.concatenate((mask * img + 255 * (1 - mask), mask * 255), axis=2).astype(np.uint8)
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(f'{opt.out}/{i:06d}.png', img)
+        elif opt.only_matted:
             img = np.concatenate((mask * img + 1 - mask, mask * 255), axis=2).astype(np.uint8)
             img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGRA)
             cv2.imwrite(f'{opt.out}/{i:06d}.png', img)
