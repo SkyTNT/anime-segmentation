@@ -97,7 +97,7 @@ arguments:
 
 This dataset is a combined dataset of [AniSeg](https://github.com/jerryli27/AniSeg#about-the-models) and [character_bg_seg_data](https://github.com/ShuhongChen/bizarre-pose-estimator#download).
 
-I clean the dataset using [DeepDanbooru](https://github.com/KichangKim/DeepDanbooru) first then manually, to make sue all mask is anime character.
+I clean the dataset using [DeepDanbooru](https://github.com/KichangKim/DeepDanbooru) first then manually, to make sure all mask is anime character.
 
 #### download
 
